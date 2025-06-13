@@ -1,8 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-//const { LexadorPitugues, AvaliadorSintaticoPitugues, Interpretador} = require('@designliquido/delegua-node')
-const { LexadorPitugues, AvaliadorSintaticoPitugues, Interpretador } = require('@designliquido/delegua');
+import express from 'express';
+import cors from 'cors';
+import bodyParser from 'body-parser';
+import { LexadorPitugues } from "@designliquido/delegua/lexador/dialetos/lexador-pitugues.js";
+import { AvaliadorSintaticoPitugues } from "@designliquido/delegua/avaliador-sintatico/dialetos/avaliador-sintatico-pitugues.js";
+import { Interpretador } from "@designliquido/delegua/interpretador/interpretador.js";
 
 const app = express();
 const port = 3001;
@@ -20,6 +21,13 @@ app.post('/executar', async (req, res) => {
   try {
     const lexador = new LexadorPitugues();
     const avaliador = new AvaliadorSintaticoPitugues();
+
+    let saidas = [];
+
+    const funcaoSaida = (texto) => {
+      saidas.push(texto);
+    } 
+
     const interpretador = new Interpretador(process.cwd(), false, funcaoSaida, funcaoSaida);
 
     const retornoLexador = lexador.mapear(codigo);
@@ -29,13 +37,7 @@ app.post('/executar', async (req, res) => {
     console.log('[✅ Retorno completo]');
     console.dir(retorno, { depth: null });
 
-    const saida =
-      retorno.resultado ??
-      retorno.retorno ??
-      retorno.saida ??
-      JSON.stringify(retorno, null, 2);
-
-    res.json({ saida });
+    res.json({ saida: saidas, retorno: retorno });
   } catch (err) {
     console.error('[ Erro ao interpretar]:', err);
     res.status(500).json({ erro: err.message });
