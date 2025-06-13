@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+
 import { LexadorPitugues } from "@designliquido/delegua/lexador/dialetos/lexador-pitugues.js";
 import { AvaliadorSintaticoPitugues } from "@designliquido/delegua/avaliador-sintatico/dialetos/avaliador-sintatico-pitugues.js";
 import { Interpretador } from "@designliquido/delegua/interpretador/interpretador.js";
@@ -28,9 +29,10 @@ app.post('/executar', async (req, res) => {
       saidas.push(texto);
     } 
 
+    // eslint-disable-next-line no-undef
     const interpretador = new Interpretador(process.cwd(), false, funcaoSaida, funcaoSaida);
 
-    const retornoLexador = lexador.mapear(codigo);
+    const retornoLexador = lexador.mapear([codigo]);
     const retornoAvaliadorSinatico = avaliador.analisar(retornoLexador, -1);
     const retorno = await interpretador.interpretar(retornoAvaliadorSinatico.declaracoes);
 
