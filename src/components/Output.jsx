@@ -12,7 +12,7 @@ const Output = ({ editorRef, language }) => {
     try {
       if (language === 'pitugues') {
         const resultado = await executeCode(language, sourceCode);
-        setOutput(resultado.saida || 'sem saída retornada');
+        setOutput(Array.isArray(resultado.saida) ? resultado.saida.join('\n') : resultado.saida);
       } else {
         setOutput('Linguagem não suportada.');
       }
