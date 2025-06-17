@@ -3,5 +3,5 @@ export const LANGUAGE_VERSION = {
 }
 
 export const CODE_SNIPPETS = {
-    pitugues: `escreva("Oi mundo!")\n`
+    pitugues: `escreva("Olá, Design Líquido!")\n`
 };

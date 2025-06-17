@@ -20,16 +20,14 @@ app.post('/executar', async (req, res) => {
   console.log('-------------------------------------');
 
   try {
-    const lexador = new LexadorPitugues();
-    const avaliador = new AvaliadorSintaticoPitugues();
-
     let saidas = [];
 
     const funcaoSaida = (texto) => {
       saidas.push(texto);
     } 
 
-    // eslint-disable-next-line no-undef
+    const lexador = new LexadorPitugues();
+    const avaliador = new AvaliadorSintaticoPitugues();
     const interpretador = new Interpretador(process.cwd(), false, funcaoSaida, funcaoSaida);
 
     const retornoLexador = lexador.mapear([codigo]);
