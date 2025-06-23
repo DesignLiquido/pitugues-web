@@ -8,7 +8,7 @@ const LanguageSelector = ({language, onSelect}) => {
     return (
     <Box ml={2} mb={4}>
       <Text mb={2} fontSize="lg">
-        Language:
+        Linguagem:
       </Text>
       <Menu isLazy>
         <MenuButton as={Button} variant="outline" size="sm">

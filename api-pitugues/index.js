@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 app.post('/executar', async (req, res) => {
   const { codigo } = req.body;
 
-  console.log('[⚡ Código recebido no backend]');
+  console.log('[Código recebido no backend]');
   console.log(codigo);
   console.log('-------------------------------------');
 
@@ -31,13 +31,20 @@ app.post('/executar', async (req, res) => {
     const interpretador = new Interpretador(process.cwd(), false, funcaoSaida, funcaoSaida);
 
     const retornoLexador = lexador.mapear([codigo]);
+    console.log(retornoLexador);
     const retornoAvaliadorSinatico = avaliador.analisar(retornoLexador, -1);
+    //console.log(retornoAvaliadorSinatico);
     const retorno = await interpretador.interpretar(retornoAvaliadorSinatico.declaracoes);
 
-    console.log('[✅ Retorno completo]');
-    console.dir(retorno, { depth: null });
+    // console.log('[Retorno completo]');
+    //console.dir(retorno, { depth: null });
 
-    res.json({ saida: saidas, retorno: retorno });
+    res.json({ 
+      saida: saidas, 
+      retorno: retorno,
+      simbolos: retornoLexador.simbolos, 
+    });
+
   } catch (err) {
     console.error('[ Erro ao interpretar]:', err);
     res.status(500).json({ erro: err.message });

@@ -23,9 +23,9 @@ const Output = ({ editorRef, language }) => {
     
   return (
     <Box w="50%">
-      <Text mb={2} fontSize="lg">Output</Text>
+      <Text mb={2} fontSize="lg">Saída:</Text>
       <Button variant="outline" colorScheme="green" mb={4} onClick={runCode}>
-        Run Code
+        Executar código
       </Button>
       <Box
         height="75vh"

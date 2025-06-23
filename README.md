@@ -1,8 +1,8 @@
 # Pituguês Web
 
-Editor de código web para o dialeto Pituguês.
+Desenvolvimento em React+Vite de um editor de código web para o dialeto Pituguês.
 
-Você encontrar a documentação de Pituguês [aqui](https://github.com/DesignLiquido/delegua/wiki/Dialetos#pitugu%C3%AAs)
+Você pode encontrar a documentação de Pituguês [aqui]()https://github.com/DesignLiquido/pitugues-docs/wiki
 
 ## Para rodar o Pituguês Web localmente
 
