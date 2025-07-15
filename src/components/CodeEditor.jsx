@@ -10,9 +10,30 @@ const CodeEditor = () => {
     const [value, setValue] = useState('');
     const [language, setLanguage] = useState('pitugues');
 
-    const onMount = (editor) => {
+    const onMount = (editor, monaco) => {
         editorRef.current = editor;
         editor.focus();
+
+        monaco.languages.register({ id: language });
+
+        const PALAVRASRESERVADAS = ['escreva', 'leia', 'aparar', 'apararFim', 'apararInicio', 'concatenar',
+            'dividir', 'fatiar', 'inclui', 'maiusculo', 'minusculo', 'substituir', 'subtexto', 'arredondarParaBaixo',
+            'arredondarParaCima', 'adicionar', 'empilhar', 'inverter', 'juntar', 'ordenar', 'remover', 'removerPrimeiro',
+            'removerUltimo', 'somar', 'tamanho', 'aleatorio', 'aleatorioEntre', 'inteiro', 'numero', 'número', 'real',
+            'texto'
+        ]
+
+        monaco.languages.setMonarchTokensProvider(language, {
+            tokenizer: {
+                root: [
+                    [new RegExp(`\\b(${PALAVRASRESERVADAS.join('|')})\\b`), "keyword"],
+                    [/\d+/, "number"],
+                    [/".*?"/, "string"],
+                    [/\#.*/, "comment"],
+                    [/[a-zA-Z_]\w*/, "identifier"],
+                ],
+            },
+        });
     };
 
     const onSelect = (lang) => {
@@ -31,7 +52,7 @@ const CodeEditor = () => {
                         language={language}
                         defaultValue={CODE_SNIPPETS[language]}
                         value={value}
-                        onMount={onMount}
+                        onMount={(editor, monaco) => onMount(editor, monaco)}
                         onChange={(value) => setValue(value)}
                     />
                 </Box>
