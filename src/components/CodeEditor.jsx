@@ -16,7 +16,12 @@ const CodeEditor = () => {
 
         monaco.languages.register({ id: language });
 
-        const PALAVRASRESERVADAS = ['escreva', 'leia']
+        const PALAVRASRESERVADAS = ['escreva', 'leia', 'aparar', 'apararFim', 'apararInicio', 'concatenar',
+            'dividir', 'fatiar', 'inclui', 'maiusculo', 'minusculo', 'substituir', 'subtexto', 'arredondarParaBaixo',
+            'arredondarParaCima', 'adicionar', 'empilhar', 'inverter', 'juntar', 'ordenar', 'remover', 'removerPrimeiro',
+            'removerUltimo', 'somar', 'tamanho', 'aleatorio', 'aleatorioEntre', 'inteiro', 'numero', 'número', 'real',
+            'texto'
+        ]
 
         monaco.languages.setMonarchTokensProvider(language, {
             tokenizer: {
@@ -24,7 +29,7 @@ const CodeEditor = () => {
                     [new RegExp(`\\b(${PALAVRASRESERVADAS.join('|')})\\b`), "keyword"],
                     [/\d+/, "number"],
                     [/".*?"/, "string"],
-                    [/\/\/.*/, "comment"],
+                    [/\#.*/, "comment"],
                     [/[a-zA-Z_]\w*/, "identifier"],
                 ],
             },
