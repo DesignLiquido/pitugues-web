@@ -16,10 +16,12 @@ const CodeEditor = () => {
 
         monaco.languages.register({ id: language });
 
+        const PALAVRASRESERVADAS = ['escreva', 'leia']
+
         monaco.languages.setMonarchTokensProvider(language, {
             tokenizer: {
                 root: [
-                    [/\bescreva\b/, "keyword"],
+                    [new RegExp(`\\b(${PALAVRASRESERVADAS.join('|')})\\b`), "keyword"],
                     [/\d+/, "number"],
                     [/".*?"/, "string"],
                     [/\/\/.*/, "comment"],
