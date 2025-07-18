@@ -2,7 +2,7 @@ import { Box, HStack } from "@chakra-ui/react";
 import { Editor } from "@monaco-editor/react";
 import { useRef, useState } from "react";
 import LanguageSelector from "./LanguageSelector";
-import { CODE_SNIPPETS } from "../constants";
+import { CODE_SNIPPETS, KEYWORDS_DOCS_LIST } from "../constants";
 import Output from "./Output";
 
 const CodeEditor = () => {
@@ -16,17 +16,12 @@ const CodeEditor = () => {
 
         monaco.languages.register({ id: language });
 
-        const PALAVRASRESERVADAS = ['escreva', 'leia', 'aparar', 'apararFim', 'apararInicio', 'concatenar',
-            'dividir', 'fatiar', 'inclui', 'maiusculo', 'minusculo', 'substituir', 'subtexto', 'arredondarParaBaixo',
-            'arredondarParaCima', 'adicionar', 'empilhar', 'inverter', 'juntar', 'ordenar', 'remover', 'removerPrimeiro',
-            'removerUltimo', 'somar', 'tamanho', 'aleatorio', 'aleatorioEntre', 'inteiro', 'numero', 'número', 'real',
-            'texto'
-        ]
+        const KEYWORDS = KEYWORDS_DOCS_LIST.map(item => item.nome);
 
         monaco.languages.setMonarchTokensProvider(language, {
             tokenizer: {
                 root: [
-                    [new RegExp(`\\b(${PALAVRASRESERVADAS.join('|')})\\b`), "keyword"],
+                    [new RegExp(`\\b(${KEYWORDS.join('|')})\\b`), "keyword"],
                     [/\d+/, "number"],
                     [/".*?"/, "string"],
                     [/\#.*/, "comment"],
@@ -34,6 +29,36 @@ const CodeEditor = () => {
                 ],
             },
         });
+
+        function createKeywordsAutocomplete(range) {
+            return  KEYWORDS_DOCS_LIST.map((p) => ({
+              label: p.nome,
+              kind: monaco.languages.CompletionItemKind.Function,
+              documentation: p.documentacao,
+              insertText: `${p.nome}()`,
+              range
+            }));
+          }
+
+        monaco.languages.registerCompletionItemProvider(language, {
+            triggerCharacters: 'abcdefghijklmnopqrstuvwxyz'.split(''),
+          
+            provideCompletionItems: function (model, position) {
+              const word = model.getWordUntilPosition(position);
+              const range = {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: word.startColumn,
+                endColumn: word.endColumn
+              };
+          
+              return {
+                suggestions: createKeywordsAutocomplete(range)
+              };
+            }
+          });
+          
+
     };
 
     const onSelect = (lang) => {
