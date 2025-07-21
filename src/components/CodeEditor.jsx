@@ -30,7 +30,7 @@ const CodeEditor = () => {
             },
         });
 
-        function createKeywordsAutocomplete(range) {
+        function createDependencyProposals(range) {
             return  KEYWORDS_DOCS_LIST.map((p) => ({
               label: p.nome,
               kind: monaco.languages.CompletionItemKind.Function,
@@ -53,10 +53,34 @@ const CodeEditor = () => {
               };
           
               return {
-                suggestions: createKeywordsAutocomplete(range)
+                suggestions: createDependencyProposals(range)
               };
             }
-          });
+        });
+
+        monaco.languages.registerHoverProvider(language, {
+            provideHover: function (model, position) {
+                const word = model.getWordAtPosition(position);
+                if (!word) return;
+        
+                const keywordDoc = KEYWORDS_DOCS_LIST.find(keywordItem => keywordItem.nome === word.word);
+                if (!keywordDoc) return;
+        
+                return {
+                    range: new monaco.Range(
+                        position.lineNumber,
+                        word.startColumn,
+                        position.lineNumber,
+                        word.endColumn
+                    ),
+                    contents: [
+                        { value: `**Nome:** ${keywordDoc.nome}` },
+                        { value: `**Descrição:** ${keywordDoc.documentacao}` },
+                        { value: `**Exemplo:**\n\`\`\`pitugues\n${keywordDoc.exemploCodigo}\n\`\`\`` }
+                    ]
+                };
+            }
+        });       
           
 
     };
