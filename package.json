@@ -1,5 +1,5 @@
 {
-  "name": "pitugues-monaco-editor",
+  "name": "pitugues-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,11 +11,14 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^2.10.9",
-    "@designliquido/delegua-node": "^1.5.6",
+    "@designliquido/delegua": "^0.45.8",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.9.0",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "framer-motion": "^12.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/node": "^24.0.15",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",

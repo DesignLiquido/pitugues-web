@@ -24,7 +24,7 @@ const CodeEditor = () => {
                     [new RegExp(`\\b(${KEYWORDS.join('|')})\\b`), "keyword"],
                     [/\d+/, "number"],
                     [/".*?"/, "string"],
-                    [/\#.*/, "comment"],
+                    [/#.*/, "comment"],
                     [/[a-zA-Z_]\w*/, "identifier"],
                 ],
             },
