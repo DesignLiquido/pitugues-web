@@ -4,23 +4,29 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "bundle": "browserify api-pitugues/idex.js -o public/legacy-bundle.js"
+    "copiar-arquivos": "yarn copy-files-from-to --force",
+    "empacotar": "yarn del-cli ./dist && yarn gerar-css && yarn gerar-web && yarn copiar-arquivos",
+    "gerar-css": "yarn sass scss/estilos.scss:./dist/estilos.css scss/codigos.scss:./dist/codigos.css",
+    "gerar-web": "yarn tsc && yarn browserify dist/index.js --s pitugues -o dist/pitugues.js && yarn browserify dist/primitivas/index.js --s PrimitivasDelegua -o dist/primitivas.js",
+    "publicar": "yarn empacotar && yarn gh-pages -d dist",
+    "servir": "yarn http-server ./dist -o -c-1",
+    "testar": "yarn empacotar && yarn servir"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.10.9",
-    "@designliquido/delegua": "^0.45.8",
+    "@designliquido/delegua": "^0.54.7",
+    "@designliquido/delegua-estatistica": "^0.1.0",
+    "@designliquido/delegua-fisica": "^0.1.0",
+    "@designliquido/delegua-json": "^0.2.1",
+    "@designliquido/delegua-matematica": "^0.3.0",
+    "@designliquido/delegua-tempo": "^1.1.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@monaco-editor/react": "^4.7.0",
-    "axios": "^1.9.0",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dompurify": "^3.2.7",
-    "express": "^5.1.0",
     "framer-motion": "^12.16.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -31,17 +37,42 @@
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "@vitejs/plugin-react": "^4.4.1",
+    "browserfy": "^1.0.0",
+    "browserify": "^17.0.1",
     "chokidar": "^4.0.3",
+    "copy-files-from-to": "^3.12.1",
+    "del-cli": "^7.0.0",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "http-server": "^14.1.1",
     "process": "^0.11.10",
-    "vite": "^6.3.5",
-    "browserify": "^17.0.0"
+    "sass": "^1.93.2",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "dompurify": "^3.2.7"
+  },
+  "copyFilesFromTo": [
+          {
+            "from": "./index.html",
+            "to": "dist/index.html"
+        },
+        {
+            "from": "node_modules/monaco-editor/min/vs/**/*",
+            "to": "dist/vs"
+        },
+        {
+            "from": "node_modules/monaco-editor/min-maps/**/*",
+            "to": "dist/min-maps"
+        },
+        {
+            "from": "nls/default.js",
+            "to": "dist/vs/editor/editor.main.nls.js"
+        }
+  ],
+  "copyFilesSettings": {
+    "whenFileExists": "overwrite"
   }
 }

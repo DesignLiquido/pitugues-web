@@ -3,8 +3,11 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import process from 'process';
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => {
+  const isLibrary = mode === 'library';
+  
+  return {
+    plugins: [react()],
   resolve: {
     alias: {
       '@api': path.resolve(__dirname, './api'),
@@ -18,7 +21,20 @@ export default defineConfig({
     include: ['process']
   },
   // Força o vite a incluir o polyfill no bundle
-  build: {
+  build: isLibrary ? {
+    lib: {
+      entry: path.resolve(__dirname, 'src/pitugues-browser.js'),
+      name: 'PituguesBrowser',
+      fileName: 'pitugues-browser',
+      formats: ['es', 'umd']
+    },
+    rollupOptions: {
+      external: [],
+      output: {
+        globals: {}
+      }
+    }
+  } : {
     rollupOptions: {
       plugins: [
         {
@@ -37,4 +53,5 @@ export default defineConfig({
       ]
     }
   }
+  };
 });

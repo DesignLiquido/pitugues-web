@@ -1,0 +1,269 @@
+@use "variaveis";
+
+html {
+    font-family: "Roboto Mono";
+    color: #000000;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    padding-bottom: 5px;
+    border-bottom: 1px solid variaveis.$claro;
+    width: 100% !important;
+    justify-content: space-between;
+
+    .navbar-central {
+        margin-left: 10px;
+     }
+
+    .navbar-esquerda {
+        cursor: pointer;
+    }
+
+    .navbar-direita {
+        display: flex;
+        width: 300px;
+        gap: 15px;
+
+        div{
+            display: flex;
+            gap: 80px;
+        }
+    }
+
+    .icone-burger {
+        width: 30px;
+        height: 3px;
+        background-color: variaveis.$preto;
+        border-radius: 5px;
+        margin: 6px 5px;
+    }
+}
+
+.exemplos {
+    border: 1px solid #171717;
+    border-radius: 3px;
+    margin: 10px;
+    padding: 5px;
+    user-select: none;
+    transition: 7ms;
+}
+
+.exemplos:hover {
+    cursor: pointer;
+    transform: scale(100.5%);
+    box-shadow: 10px 10px 15px -9px rgba(0,0,0,0.45);
+}
+
+.sidenav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: variaveis.$branco;
+    overflow-x: hidden;
+    padding-top: 60px;
+    transition: 0.5s;
+    padding-top: 15px;
+
+    a {
+        padding: 8px 8px 8px 32px;
+        text-decoration: none;
+        font-size: 25px;
+        color: #484848;
+        display: block;
+        transition: 0.2s;
+    }
+
+    a:hover {
+        color: #111;
+    }
+
+    .closebtn {
+        position: absolute;
+        top: 0;
+        right: 25px;
+        font-size: 36px;
+        margin-left: 50px;
+    }
+}
+
+#main {
+    transition: margin-left .5s;
+    padding: 20px;
+}
+
+#botaoTraduzir,
+#botaoCompartilhar,
+#botaoExecutar {
+    cursor: pointer;
+    background-color: transparent;
+    width: 0px !important;
+    border: transparent;
+    color: variaveis.$preto;
+}
+
+#editor {
+    width: 65%;
+    height: calc(100% - 65px);
+    left: 0;
+    position: fixed;
+    border-right: 1px solid variaveis.$borda;
+    border-top: 1px solid variaveis.$borda;
+}
+
+textarea {
+    border: none;
+    outline: none;
+    overflow: hidden;
+
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+
+    resize: none;
+}
+
+@media only screen and (max-width: 562px) {
+    nav {
+        justify-content: space-around;
+        font-size: 14px;
+        flex-wrap: wrap;
+    }
+
+    .navbar-direita{
+        margin-left: auto;
+
+        #linguagem{
+            order: 2;
+            width: 151px;
+        }
+
+        div{
+            order: 1;
+            gap: 64px;
+        }
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    #editor {
+        width: 100% !important;
+        height: 70% !important;
+        position: relative !important;
+    }
+
+    #resultadoEditor {
+        width: 100% !important;
+        height: 29% !important;
+        position: relative !important;
+    }
+
+    #botaoTraduzir,
+    #botaoExecutar {
+        width: 50px;
+        font-size: 11px;
+    }
+
+    #seletorDemos {
+        width: 108px;
+        font-size: 11px;
+    }
+}
+
+#resultadoEditor {
+    width: calc(35% - 4px);
+    height: calc(100% - 65px);
+    right: 0;
+    position: fixed;
+    border-right: 1px solid variaveis.$borda;
+    border-top: 1px solid variaveis.$borda;
+    overflow-y: scroll;
+}
+
+.resultadoEditor {
+    margin: 1px 10px;
+    padding-top: 0;
+    font-size: 13px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#container {
+    height: auto;
+    width: 100%;
+    font-size: 0;
+    margin-bottom: 7px;
+    margin-top: 7px;
+}
+
+#left,
+#middle,
+#right {
+    display: inline-block;
+    *display: inline;
+    zoom: 1;
+    vertical-align: middle;
+    font-size: 12px;
+}
+
+#left {
+    width: 25%;
+}
+
+#middle {
+    width: 50%;
+    text-align: center;
+    display: inline-block;
+}
+
+#right {
+    width: 25%;
+    text-align: center;
+}
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 25%;
+    height: 55%;
+}
+
+.toast-notificacao {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+
+    &.mostrar {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .fechar-toast {
+        margin-left: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        opacity: 0.7;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
