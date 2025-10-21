@@ -44,7 +44,7 @@ const mapearErros = function (erros: any[]) {
         }
     })
 
-    Monaco.editor.setModelMarkers(editor.getModel(), 'delegua', _erros);
+    Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', _erros);
 }
 
 const mapearAvisos = function (avisos: any[]) {
@@ -65,27 +65,27 @@ const mapearAvisos = function (avisos: any[]) {
         }
     })
 
-    Monaco.editor.setModelMarkers(editor.getModel(), 'delegua', _avisos);
+    Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', _avisos);
 }
 
 const executarTradutor = function () {
     const pitugues = new Pitugues.PituguesWeb("");
-
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n")
 
     //ts-ignore
     const linguagem = (<HTMLInputElement>document.querySelector("#linguagem")).value.toLowerCase()
-  const funcoes = {
-        "python": { tradutor: Pitugues.tradutorPython, linguagem: "python" },
-      "javascript": { tradutor: Pitugues.tradutorJavascript, linguagem: "javascript" },
-        // "assemblyscript": { tradutor: Pitugues.tradutorAssemblyScript, linguagem: "typescript" },
+
+    const funcoes = {
+        "python": { tradutor: pitugues.tradutorPython, linguagem: "python" },
+        "javascript": { tradutor: pitugues.tradutorJavascript, linguagem: "javascript" },
+        // "assemblyscript": { tradutor: pitugues.tradutorAssemblyScript, linguagem: "typescript" },
     }
     if (codigo[0]) {
-        const retornoLexador = Pitugues.lexador.mapear(codigo, -1);
+        const retornoLexador = pitugues.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            Pitugues.avaliadorSintatico.analisar(retornoLexador);
+            pitugues.avaliadorSintatico.analisar(retornoLexador);
 
-       const funcao = (funcoes as any)[linguagem];
+        const funcao = funcoes[linguagem]
         const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes)
 
         if (retornoTradutor) {
@@ -99,27 +99,27 @@ const executarTradutor = function () {
 
 const executarCodigo = async function () {
     try {
-        const pitugues = new Pitugues.PituguesWeb(""); 
+        const pitugues = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
         const editor = Monaco?.editor.getEditors()[0];
         const modelo = Monaco.editor.getModels()[0];
         const codigo = modelo.getValue().split("\n");
-        Monaco.editor.setModelMarkers(editor.getModel(), 'delegua', []);
+        Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', []);
 
-        const retornoLexador = Pitugues.lexador.mapear(codigo, -1);
+        const retornoLexador = pitugues.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            Pitugues.avaliadorSintatico.analisar(retornoLexador);
+            pitugues.avaliadorSintatico.analisar(retornoLexador);
         if (retornoAvaliadorSintatico.erros.length > 0) {
             return mapearErros(retornoAvaliadorSintatico.erros);
         }
 
-        const analisadorSemantico = Pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+        const analisadorSemantico = pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
         const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
         if (errosAnaliseSemantica?.length) {
             mapearAvisos(errosAnaliseSemantica);
         }
 
-        const respostaInterpretador = await Pitugues.executar({ retornoLexador, retornoAvaliadorSintatico });
+        const respostaInterpretador = await pitugues.executar({ retornoLexador, retornoAvaliadorSintatico });
         const errosInterpretacao = respostaInterpretador.erros;
         if (errosInterpretacao) {
             errosInterpretacao.forEach((erro: any) => {
@@ -193,16 +193,16 @@ const compartilharCodigo = function () {
 };
 
 const analisarCodigo = function () {
-    const delegua = new Pitugues.DeleguaWeb("");
+    const pitugues = new Pitugues.PituguesWeb("");
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
 
-    const retornoLexador = Pitugues.lexador.mapear(codigo, -1);
-    const retornoAvaliadorSintatico = Pitugues.avaliadorSintatico.analisar(retornoLexador);
+    const retornoLexador = pitugues.lexador.mapear(codigo, -1);
+    const retornoAvaliadorSintatico = pitugues.avaliadorSintatico.analisar(retornoLexador);
     if (retornoAvaliadorSintatico.erros.length > 0) {
         return mapearErros(retornoAvaliadorSintatico.erros);
     }
 
-    const analisadorSemantico = Pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+    const analisadorSemantico = pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
     const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
     mapearAvisos(errosAnaliseSemantica);
@@ -211,7 +211,7 @@ const analisarCodigo = function () {
 function definirLinguagemDelegua() {
   return {
     defaultToken: 'invalid',
-    tokenPostfix: '.delegua',
+    tokenPostfix: '.pitugues',
 
     keywords: [
       // Should match the keys of textToKeywordObj in
@@ -500,13 +500,13 @@ function definirLinguagemDelegua() {
   };
 }
 
-let tempoEsperaMudancas: any = null;
+let tempoEsperaMudancas;
 const configurarAtualizacaoAutomatica = function () {
     let editor = Monaco?.editor.getEditors()[0];
     if (!editor) {
         Monaco?.editor?.create(document.getElementById('editor'), {
             value: '// Digite código em Delégua aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Delégua.',
-            language: 'delegua'
+            language: 'pitugues'
         });
         editor = Monaco?.editor.getEditors()[0];
     }
@@ -533,66 +533,42 @@ const configurarAtualizacaoAutomatica = function () {
 const configurarLinguagemDelegua = function () {
     const primitivas = (globalThis as any).primitivas;
     Monaco.languages?.register({
-        id: 'delegua',
-        extensions: ['.delegua'],
-        aliases: ['delegua', 'language-generation'],
-        mimetypes: ['application/delegua'],
+        id: 'pitugues',
+        extensions: ['.pitugues'],
+        aliases: ['pitugues', 'language-generation'],
+        mimetypes: ['application/pitugues'],
     });
 
-    Monaco.languages.setMonarchTokensProvider('delegua', definirLinguagemDelegua());
+    Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemDelegua());
 
-    Monaco.languages.registerCompletionItemProvider('delegua', {
+    Monaco.languages.registerCompletionItemProvider('pitugues', {
         provideCompletionItems: () => {
-           interface FormatoPrimitiva {
-            label: string;
-            kind: number;
-            insertText: string;
-            insertTextRules: number;
-           }
-
-            const formatoPrimitivas: FormatoPrimitiva[] = primitivas
-            .filter((p: { nome: string; exemploCodigo?: string }) => p.exemploCodigo)
-            .map((p:{nome: string; exemploCodigo?: string}) => ({
-                label: p.nome,
-                kind: 17, // Keyword
-                insertText: (p.exemploCodigo ?? '').split('.')[1] ?? '',
-                insertTextRules: 4 // InsertAsSnippet
-            }));
-            interface FormatoSnippet {
-                label: string;
-                kind: number;
-                insertText: string;
-                documentation: string;
-                insertTextRules: number;
-            }
-            interface PituguesCodeSnippet {
-                prefixo: string;
-                corpo: string[];
-                descricao: string;
-            }
-            // const formatoSnippets: PituguesCodeSnippet = PituguesCodeSnippets?: PituguesCodeSnippets.map(({ prefixo, corpo, descricao }) => {
-            //     return {
-            //         label: prefixo,
-            //         kind: 15, // Snippet,
-            //         insertText: corpo.join('\n'),
-            //         documentation: descricao,
-            //         insertTextRules: 4 // InsertAsSnippet
-            //     }
-            // })
-            // const sugestoes = [...formatoPrimitivas, ...formatoSnippets]
-            // return { suggestions: sugestoes };
+            const formatoPrimitivas = primitivas.filter(p => p.exemploCodigo).map(({ nome, exemploCodigo: exemplo }) => {
+                return {
+                    label: nome,
+                    kind: 17, // Keyword,
+                    insertText: exemplo.split('.')[1],
+                    insertTextRules: 4 // InsertAsSnippet
+                }
+            });
+            const formatoSnippets = CODE_SNIPPETS?.map(({ prefixo, corpo, descricao }) => {
+                return {
+                    label: prefixo,
+                    kind: 15, // Snippet,
+                    insertText: corpo.join('\n'),
+                    documentation: descricao,
+                    insertTextRules: 4 // InsertAsSnippet
+                }
+            })
+            const sugestoes = [...formatoPrimitivas, ...formatoSnippets]
+            return { suggestions: sugestoes };
         }
     });
 
-    Monaco.languages.registerHoverProvider('delegua', {
-        provideHover: function (model: any, position: number) {
+    Monaco.languages.registerHoverProvider('pitugues', {
+        provideHover: function (model, position) {
             const palavra = model.getWordAtPosition(position);
-            interface Primitiva {
-                nome: string;
-                documentacao: string;
-                exemploCodigo: string;
-            }
-            const primitiva = primitivas.find((p: Primitiva) => p.nome === palavra.word);
+            const primitiva = primitivas.find(p => p.nome === palavra?.word)
             if (primitiva) {
                 return {
                     contents: [
@@ -623,24 +599,28 @@ window.addEventListener("load", () => {
     }
     else if (exemploId) {
         modelo.setValue((window as any).Exemplos[exemploId]);
-        document.querySelector('#titulo-arquivo')!.innerHTML = `${exemploId}.delegua`;
+        document.querySelector('#titulo-arquivo').innerHTML = `${exemploId}.pitugues`;
     } else {
         modelo.setValue('// Digite código em Delégua aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Delégua.');
     }
 
-    Monaco.editor.setModelLanguage(modelo, 'delegua');
+    Monaco.editor.setModelLanguage(modelo, 'pitugues');
 });
 
+botaoTraduzir.addEventListener("click", function () {
+    limparResultadoEditor();
+    executarTradutor();
+});
 
-botaoCompartilhar?.addEventListener("click", function () {
+botaoCompartilhar.addEventListener("click", function () {
     compartilharCodigo();
 });
 
-botaoExecutar?.addEventListener("click", function () {
+botaoExecutar.addEventListener("click", function () {
     limparResultadoEditor();
     executarCodigo();
 });
 
-const definirTema = (tema:string) => {
+const definirTema = (tema) => {
     Monaco.editor.setTheme(tema)
 }

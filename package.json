@@ -47,6 +47,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "http-server": "^14.1.1",
+    "monaco-editor": "^0.48.0",
     "process": "^0.11.10",
     "sass": "^1.93.2",
     "typescript": "^5.9.3"
@@ -54,23 +55,35 @@
   "overrides": {
     "dompurify": "^3.2.7"
   },
-  "copyFilesFromTo": [
-          {
-            "from": "./index.html",
-            "to": "dist/index.html"
-        },
-        {
-            "from": "node_modules/monaco-editor/min/vs/**/*",
-            "to": "dist/vs"
-        },
-        {
-            "from": "node_modules/monaco-editor/min-maps/**/*",
-            "to": "dist/min-maps"
-        },
-        {
-            "from": "nls/default.js",
-            "to": "dist/vs/editor/editor.main.nls.js"
-        }
+  "copyFiles": [
+    {
+      "from": "index.html",
+      "to": "dist/index.html"
+    },
+    {
+      "from": "exemplos.html",
+      "to": "dist/exemplos.html"
+    },
+    {
+      "from": "favicon.ico",
+      "to": "dist/favicon.ico"
+    },
+    {
+      "from": "./icones/**",
+      "to": "dist/icones/"
+    },
+    {
+      "from": "node_modules/monaco-editor/min/vs/**/*",
+      "to": "dist/vs"
+    },
+    {
+      "from": "node_modules/monaco-editor/min-maps/**/*",
+      "to": "dist/min-maps"
+    },
+    {
+      "from": "nls/default.js",
+      "to": "dist/vs/editor/editor.main.nls.js"
+    }
   ],
   "copyFilesSettings": {
     "whenFileExists": "overwrite"

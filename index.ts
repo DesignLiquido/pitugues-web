@@ -25,7 +25,6 @@ import * as json from "./bibliotecas/delegua-json";
 import tiposDeSimbolos from "@designliquido/delegua/tipos-de-simbolos/pitugues";
 
 import { InterpretadorWeb } from "./interpretador-web";
-
 export class PituguesWeb {
     nomeArquivo: string;
 
@@ -43,7 +42,7 @@ export class PituguesWeb {
     tradutorPython = new TradutorPython();
     tradutorAssemblyScript = new TradutorAssemblyScript();
 
-    constructor(nomeArquivo: string, funcaoDeRetorno: Function = mostrarResultadoExecutar ) {
+    constructor(nomeArquivo: string, funcaoDeRetorno: Function = null) {
         this.nomeArquivo = nomeArquivo;
         this.funcaoDeRetorno = funcaoDeRetorno || console.log;
 
@@ -113,7 +112,7 @@ export class PituguesWeb {
                     erroLexador.mensagem
                 );
             }
-            //return;
+           return;
         }
 
         if (retornoImportador.retornoAvaliadorSintatico.erros.length > 0) {
@@ -124,7 +123,7 @@ export class PituguesWeb {
                     erroAvaliadorSintatico.message
                 );
             }
-            //return;
+            return;
         }
 
         const retornoInterpretador = await this.interpretador.interpretar(

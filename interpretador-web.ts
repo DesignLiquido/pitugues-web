@@ -4,14 +4,15 @@ import { ErroEmTempoDeExecucao } from "@designliquido/delegua/excecoes";
 
 
 
+
 export class InterpretadorWeb 
     extends Interpretador
 {
    constructor(
         diretorioBase: string,
         performance = false,
-        funcaoDeRetorno: Function = mostrarResultadoExecutar,
-        funcaoDeRetornoMesmaLinha: Function = mostrarResultadoExecutar 
+        funcaoDeRetorno: Function = null,
+        funcaoDeRetornoMesmaLinha: Function = null 
     ) {
         super(diretorioBase, performance, funcaoDeRetorno, funcaoDeRetornoMesmaLinha);
     }
