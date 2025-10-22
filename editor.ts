@@ -208,10 +208,10 @@ const analisarCodigo = function () {
     mapearAvisos(errosAnaliseSemantica);
 };
 
-function definirLinguagemDelegua() {
+function definirLinguagemPitugues() {
   return {
     defaultToken: 'invalid',
-    tokenPostfix: '.pitugues',
+    tokenPostfix: ['pitugues', '.pitu'],
 
     keywords: [
       // Should match the keys of textToKeywordObj in
@@ -530,7 +530,7 @@ const configurarAtualizacaoAutomatica = function () {
     });
 };
 
-const configurarLinguagemDelegua = function () {
+const configurarLinguagemPitugues = function () {
     const primitivas = (globalThis as any).primitivas;
     Monaco.languages?.register({
         id: 'pitugues',
@@ -539,7 +539,7 @@ const configurarLinguagemDelegua = function () {
         mimetypes: ['application/pitugues'],
     });
 
-    Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemDelegua());
+    Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemPitugues());
 
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         provideCompletionItems: () => {
@@ -584,7 +584,7 @@ const configurarLinguagemDelegua = function () {
 }
 
 window.addEventListener("load", () => {
-    configurarLinguagemDelegua();
+    configurarLinguagemPitugues();
     configurarAtualizacaoAutomatica();
 
     const searchParams = new URLSearchParams(window.location.search.split('?')[1]);

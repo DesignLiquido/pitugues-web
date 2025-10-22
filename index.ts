@@ -1,5 +1,5 @@
-import { Lexador } from "@designliquido/delegua/lexador";
-import { AvaliadorSintatico } from "@designliquido/delegua/avaliador-sintatico";
+import { Lexador, LexadorPitugues } from "@designliquido/delegua/lexador";
+import { AvaliadorSintatico, AvaliadorSintaticoPitugues } from "@designliquido/delegua/avaliador-sintatico";
 import { AnalisadorSemantico } from "@designliquido/delegua/analisador-semantico";
 import { Interpretador } from "@designliquido/delegua/interpretador";
 
@@ -46,8 +46,8 @@ export class PituguesWeb {
         this.nomeArquivo = nomeArquivo;
         this.funcaoDeRetorno = funcaoDeRetorno || console.log;
 
-        this.lexador = new Lexador();
-        this.avaliadorSintatico = new AvaliadorSintatico();
+        this.lexador = new LexadorPitugues();
+        this.avaliadorSintatico = new AvaliadorSintaticoPitugues();
         this.analisadorSemantico = new AnalisadorSemantico();
         this.interpretador = new InterpretadorWeb(
             "",
