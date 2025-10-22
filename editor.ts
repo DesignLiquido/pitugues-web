@@ -505,7 +505,7 @@ const configurarAtualizacaoAutomatica = function () {
     let editor = Monaco?.editor.getEditors()[0];
     if (!editor) {
         Monaco?.editor?.create(document.getElementById('editor'), {
-            value: '// Digite código em Delégua aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Delégua.',
+            value: '# Digite código em Pituguês aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Pituguês.',
             language: 'pitugues'
         });
         editor = Monaco?.editor.getEditors()[0];
@@ -601,7 +601,7 @@ window.addEventListener("load", () => {
         modelo.setValue((window as any).Exemplos[exemploId]);
         document.querySelector('#titulo-arquivo').innerHTML = `${exemploId}.pitugues`;
     } else {
-        modelo.setValue('// Digite código em Delégua aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Delégua.');
+        modelo.setValue( '# Digite código em Pituguês aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Pituguês.');
     }
 
     Monaco.editor.setModelLanguage(modelo, 'pitugues');

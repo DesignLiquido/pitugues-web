@@ -2,19 +2,19 @@ const CODE_SNIPPETS = [
     {
 		prefixo: "para",
 		corpo: [
-			"para (var ${1:i} = 0; ${1:i} < 5; ${1:i} = ${1:i} + 1)",
-			"\tescreva(${1:i});"
+			"para var ${1:i} = 0; ${1:i} < 5; ${1:i} = ${1:i} + 1",
+			"\tescreva(${1:i})"
 		],
 		descricao: "Laço de repetição \"para\""
 	},
     {
 		prefixo: "fazer enquanto",
 		corpo: [
-			"$var i = 0;",
+			"$var i = 0",
 			"$fazer",
-			"\tescreva(i);",
-			"\ti = i + 1;",
-			"enquanto(i < 5)"
+			"\tescreva(i)",
+			"\ti = i + 1",
+			"enquanto i < 5"
 		],
 		descricao: "Laço de repetição \"fazer-enquanto\""
 	},
@@ -22,7 +22,7 @@ const CODE_SNIPPETS = [
 		prefixo: "funcao padrao",
 		corpo: [
 			"funcao ${1:nome}()",
-			"\tescreva(\"sim!\");"
+			"\tescreva(\"sim!\")"
 		],
 		descricao: "Declaração de \"funcao-padrao\""
 	},
@@ -30,49 +30,49 @@ const CODE_SNIPPETS = [
 		prefixo: "funcao anonima",
 		corpo: [
 			"var ${1:nome} = funcao(${2:variavel})",
-			"\tretorna ${2:variavel};"
+			"\tretorna ${2:variavel}"
 		],
 		descricao: "Declaração de \"funcao-anonima\""
 	},
     {
 		prefixo: "se",
 		corpo: [
-			"se (${1:condicao})",
-			"\tescreva('sim');"
+			"se ${1:condicao}:",
+			"\tescreva('sim')"
 		],
 		descricao: "Declaração de \"se\""
 	},
     {
 		prefixo: "se senao",
 		corpo: [
-			"se (${1:condicao})",
-			"\tescreva('correspondente 1');",
-			"senao",
-			"\tescreva('correspondente 2');"
+			"se ${1:condicao}:",
+			"\tescreva('correspondente 1')",
+			"senao:",
+			"\tescreva('correspondente 2')"
 		],
 		descricao: "Declaração \"se-senao\""
 	},
     {
 		prefixo: "se senaose senao",
 		corpo: [
-			"se (${1:condicao1})",
-			"\tescreva('correspondente 1');",
-			"senao se (${2:condicao2})",
-			"\tescreva('correspondente 2');",
-			"senao",
-			"\tescreva('sem valor correspondente');"
+			"se ${1:condicao1}:",
+			"\tescreva('correspondente 1')",
+			"senao se ${2:condicao2}:",
+			"\tescreva('correspondente 2')",
+			"senao:",
+			"\tescreva('sem valor correspondente')"
 		],
 		descricao: "Declaração \"se-senaose-senao\""
 	},
     {
 		prefixo: "escolha",
 		corpo: [
-			"escolha (${1:chave})",
+			"escolha ${1:chave}:",
 			"\tcaso ${2:valor}:",
-			"\t\tescreva(\"Olá Mundo!\");",
-			"\t\tpare;",
+			"\t\tescreva(\"Olá Mundo!\")",
+			"\t\tpare",
 			"\tpadrao:",
-			"\t\tescreva(\"Valor padrão!\");"
+			"\t\tescreva(\"Valor padrão!\")"
 		],
 		descricao: "Declaração \"escolha\""
 	},
@@ -80,9 +80,9 @@ const CODE_SNIPPETS = [
 		prefixo: "tente pegue",
 		corpo: [
 			"tente",
-			"\tescreva(\"sucesso\");",
+			"\tescreva(\"sucesso\")",
 			"pegue",
-			"\tescreva(\"pegue\");"
+			"\tescreva(\"pegue\")"
 		],
 		descricao: "Declaração \"tente-pegue\""
 	},
@@ -90,11 +90,11 @@ const CODE_SNIPPETS = [
 		prefixo: "tente pegue finalmente",
 		corpo: [
 			"tente",
-			"\tescreva(\"sucesso\");",
+			"\tescreva(\"sucesso\")",
 			"pegue",
-			"\tescreva(\"pegue\");",
+			"\tescreva(\"pegue\")",
 			"finalmente",
-			"\tescreva(\"pronto\");"
+			"\tescreva(\"pronto\")"
 		],
 		descricao: "Declaração \"tente-pegue-finalmente\""
 	}
