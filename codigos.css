@@ -1,0 +1,47 @@
+.codeflask {
+  background: #1e1e1e;
+  color: #9cdcfe;
+}
+.codeflask .token.punctuation {
+  color: #4a4a4a;
+}
+.codeflask .token.keyword {
+  color: #8500ff;
+}
+.codeflask .token.operator {
+  color: #ff5598;
+}
+.codeflask .token.string {
+  color: #41ad8f;
+}
+.codeflask .token.comment {
+  color: #6a9955;
+}
+.codeflask .token.function {
+  color: #d7ba7d;
+}
+.codeflask .token.boolean {
+  color: #8500ff;
+}
+.codeflask .token.number {
+  color: #8500ff;
+}
+.codeflask .token.selector {
+  color: #8500ff;
+}
+.codeflask .token.property {
+  color: #8500ff;
+}
+.codeflask .token.tag {
+  color: #8500ff;
+}
+.codeflask .token.attr-value {
+  color: #8500ff;
+}
+
+.codeflask__textarea {
+  caret-color: #fff !important;
+  color: #1e1e1e !important;
+}
+
+/*# sourceMappingURL=codigos.css.map */
