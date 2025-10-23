@@ -1,12 +1,23 @@
-# Pituguês Web
+# Página Web com Interpretador Pituguês
 
-Desenvolvimento em React + Vite de um editor de código web para o dialeto Pituguês.
+Baseada em [`delegua-web`](https://designliquido.github.io/delegua-web), da linguagem Delégua.
 
-Você pode encontrar a documentação de Pituguês [aqui](https://github.com/DesignLiquido/pitugues-docs/wiki)
+Versão funcional publicada em https://designliquido.github.io/pitugues-web/
 
-## Para rodar o Pituguês Web localmente
+## Executando localmente
 
-* Faça um _fork_ deste repositório: https://github.com/DesignLiquido/pitugues-web/fork
-* Em um terminal, abrir o diretório `api-pitugues` e executar o comando `node index.js`
-* Em outro terminal, abrir o diretório raiz e executar o comando `npm run dev`
-* Ir para a URL: `http://localhost:5173/`
+Para executar no seu computador, instale o [Node.js](https://nodejs.org/pt/download) versão LTS. 
+
+Usamos o [yarn](https://yarnpkg.com/) como gerenciador de pacotes. Para restaurar pacotes, use o comando `yarn`. 
+
+O comando que faz tudo é o `yarn testar`. Após pronto, seu navegador padrão abrirá com `pitugues-web` executando.
+
+## Notas sobre geração dos scripts
+
+`index.ts` e tudo dentro de `primitivas/` passam pelo Browserify, que geram scripts compatíveis com navegadores muito antigos, que não suportam módulos.
+
+## Quem já Contribuiu
+
+<a href="https://github.com/DesignLiquido/pitugues-web/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=DesignLiquido/pitugues-web" />
+</a>
