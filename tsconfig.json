@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "commonjs",
+    "lib": [
+      "es2015",
+      "es2017",
+      "dom"
+    ],
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "allowJs": true,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "babel.config.js",
+    "dist/**/*"
+  ]
+}

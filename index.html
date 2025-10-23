@@ -1,13 +1,83 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/pitugues-logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pituguês Web</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<html lang="pt">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta http-equiv="Cache-Control" content="no-cache" />
+  <meta charset="UTF-8" />
+
+  <title>Linguagem Pitugues por Design Líquido - Editor Web</title>
+  <link data-name="vs/editor/editor.main" rel="stylesheet" href="vs/editor/editor.main.css" />
+  <link rel="icon" href="./icones/favicon-32.png" sizes="32x32">
+  <link rel="icon" href="./icones/favicon-128.png" sizes="128x128">
+  <link rel="icon" href="./icones/favicon-180.png" sizes="180x180">
+  <link rel="icon" href="./icones/favicon-192.png" sizes="192x192">
+  <link rel="stylesheet" href="./estilos.css" />
+  <link rel="stylesheet" href="./codigos.css" />
+  <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+
+<body>
+  <div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <a href="index.html">Editor</a>
+    <a href="exemplos.html">Exemplos</a>
+  </div>
+
+  <nav>
+    <div class="navbar-esquerda">
+      <div onclick="openNav()">
+        <div class="icone-burger"></div>
+        <div class="icone-burger"></div>
+        <div class="icone-burger"></div>
+      </div>
+    </div>
+    <div class="navbar-central">
+      <p id="titulo-arquivo">index.pitu</p>
+    </div>
+    <select onchange="definirTema(this.value)" id="temaEditor">
+      <option value="vs">Padrão</option>
+      <option value="vs-dark">Visual Studio Escuro</option>
+      <option value="hc-black">Escuro</option>
+      <option value="hc-light">Claro</option>
+    </select>
+    <div class="navbar-direita">
+        <select id="linguagem">
+            <option selected>JavaScript</option>
+            <option>Python</option>
+        </select>
+        <div>
+            <button id="botaoTraduzir" title="Traduzir">
+							<i class="fa fa-language" style="font-size:20px;"></i>
+            </button>
+
+            <button id="botaoCompartilhar" title="Compartilhar">
+							<i class="fa fa-share-alt" style="font-size:20px;"></i>
+            </button>
+
+            <button id="botaoExecutar" title="Executar">
+							<i class="fa fa-play" style="font-size:20px;"></i>
+            </button>
+          </div>
+    </div>
+  </nav>
+
+  <div id="editor" style="z-index: 0 !important;"></div>
+  <div id="resultadoEditor" aria-live="polite"></div>
+
+  <script>var exports = {};</script>
+  <script src="./src/constants.js"></script>
+
+  <script src="./primitivas.js"></script>
+  <script src="./pitugues.js"></script>
+
+  <script src="vs/loader.js"></script>
+  <script src="vs/editor/editor.main.nls.js"></script>
+  <script src="vs/editor/editor.main.js"></script>
+
+  <script src="./editor.js"></script>
+  <script src="./menu.js"></script>
+  <script src="./exemplos.js"></script>
+</body>
+
 </html>
