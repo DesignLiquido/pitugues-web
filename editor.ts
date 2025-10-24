@@ -532,14 +532,34 @@ const configurarAtualizacaoAutomatica = function () {
 
 const configurarLinguagemPitugues = function () {
     const primitivas = (globalThis as any).primitivas;
-    Monaco.languages?.register({
-        id: 'pitugues',
-        extensions: ['.pitugues'],
-        aliases: ['pitugues', 'language-generation'],
-        mimetypes: ['application/pitugues'],
+    Monaco.languages.register({ id: 'pitugues' });
+
+    Monaco.languages.setLanguageConfiguration('pitugues', {
+        comments: {
+            lineComment: '#'
+        },
+        brackets: [
+            ['{', '}'],
+            ['[', ']'],
+            ['(', ')']
+        ],
+        autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+        ]
     });
 
-    Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemPitugues());
+    Monaco.languages.setMonarchTokensProvider('pitugues', {
+        tokenizer: {
+            root: [
+                [/#.*$/, 'comment']  // reconhece comentários iniciados com #
+            ]
+        }
+    });
+
 
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         provideCompletionItems: () => {
