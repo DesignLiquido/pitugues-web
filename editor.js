@@ -376,15 +376,11 @@ function definirLinguagemPitugues() {
                 [/`/, 'string', '@string_backtick']
             ],
             whitespace: [
-                [/[ \t\r\n]+/, ''],
-                [/\/\*\*(?!\/)/, 'comment.doc', '@jsdoc'],
-                [/\/\*/, 'comment', '@comment'],
-                [/\/\/.*$/, 'comment']
+                [/[ \t\r\n]+/, ''], // espaços, tabs e quebras de linha
+                [/#.*$/, 'comment'] // reconhece comentários iniciados com #
             ],
             comment: [
-                [/[^\/*]+/, 'comment'],
-                [/\*\//, 'comment', '@pop'],
-                [/[\/*]/, 'comment']
+                [/#.*$/, 'comment'] // mantém compatível caso o estado seja usado
             ],
             jsdoc: [
                 [/[^\/*]+/, 'comment.doc'],
@@ -479,31 +475,12 @@ const configurarAtualizacaoAutomatica = function () {
 };
 const configurarLinguagemPitugues = function () {
     const primitivas = globalThis.primitivas;
-    Monaco.languages.register({ id: 'pitugues' });
-    Monaco.languages.setLanguageConfiguration('pitugues', {
-        comments: {
-            lineComment: '#'
-        },
-        brackets: [
-            ['{', '}'],
-            ['[', ']'],
-            ['(', ')']
-        ],
-        autoClosingPairs: [
-            { open: '{', close: '}' },
-            { open: '[', close: ']' },
-            { open: '(', close: ')' },
-            { open: '"', close: '"' },
-            { open: "'", close: "'" }
-        ]
+    Monaco.languages.register({ id: 'pitugues',
+        extensions: ['.pitu'],
+        aliases: ['Pituguês', 'language-generation'],
+        mimetypes: ['application/pitugues']
     });
-    Monaco.languages.setMonarchTokensProvider('pitugues', {
-        tokenizer: {
-            root: [
-                [/#.*$/, 'comment'] // reconhece comentários iniciados com #
-            ]
-        }
-    });
+    Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemPitugues());
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         provideCompletionItems: () => {
             const formatoPrimitivas = primitivas.filter(p => p.exemploCodigo).map(({ nome, exemploCodigo: exemplo }) => {
