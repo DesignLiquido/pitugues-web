@@ -1,3 +1,5 @@
+import { IPrimitiva } from "./primitivas/primitiva-interface";
+
 const resultadoEditorDiv: HTMLElement = document.getElementById("resultadoEditor") as HTMLElement;
 const botaoTraduzir = document.getElementById("botaoTraduzir");
 const botaoCompartilhar = document.getElementById("botaoCompartilhar");
@@ -20,6 +22,7 @@ const mostrarResultadoExecutar = function (codigo: string) {
     resultadoEditorDiv?.appendChild(paragrafo);
 };
 
+const pituguesWeb = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
 const limparResultadoEditor = function () {
     resultadoEditorDiv.innerHTML = "";
 };
@@ -69,21 +72,21 @@ const mapearAvisos = function (avisos: any[]) {
 }
 
 const executarTradutor = function () {
-    const pitugues = new Pitugues.PituguesWeb("");
+    const pituguesWeb = new Pitugues.PituguesWeb("");
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n")
 
     //ts-ignore
     const linguagem = (<HTMLInputElement>document.querySelector("#linguagem")).value.toLowerCase()
 
     const funcoes = {
-        "python": { tradutor: pitugues.tradutorPython, linguagem: "python" },
-        "javascript": { tradutor: pitugues.tradutorJavascript, linguagem: "javascript" },
+        "python": { tradutor: pituguesWeb.tradutorPython, linguagem: "python" },
+        "javascript": { tradutor: pituguesWeb.tradutorJavascript, linguagem: "javascript" },
         // "assemblyscript": { tradutor: pitugues.tradutorAssemblyScript, linguagem: "typescript" },
     }
     if (codigo[0]) {
-        const retornoLexador = pitugues.lexador.mapear(codigo, -1);
+        const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            pitugues.avaliadorSintatico.analisar(retornoLexador);
+            pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
 
         const funcao = funcoes[linguagem]
         const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes)
@@ -99,27 +102,27 @@ const executarTradutor = function () {
 
 const executarCodigo = async function () {
     try {
-        const pitugues = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
+        const pituguesWeb = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
         const editor = Monaco?.editor.getEditors()[0];
         const modelo = Monaco.editor.getModels()[0];
         const codigo = modelo.getValue().split("\n");
         Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', []);
 
-        const retornoLexador = pitugues.lexador.mapear(codigo, -1);
+        const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            pitugues.avaliadorSintatico.analisar(retornoLexador);
+            pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
         if (retornoAvaliadorSintatico.erros.length > 0) {
             return mapearErros(retornoAvaliadorSintatico.erros);
         }
 
-        const analisadorSemantico = pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+        const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
         const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
         if (errosAnaliseSemantica?.length) {
             mapearAvisos(errosAnaliseSemantica);
         }
 
-        const respostaInterpretador = await pitugues.executar({ retornoLexador, retornoAvaliadorSintatico });
+        const respostaInterpretador = await pituguesWeb.executar({ retornoLexador, retornoAvaliadorSintatico });
         const errosInterpretacao = respostaInterpretador.erros;
         if (errosInterpretacao) {
             errosInterpretacao.forEach((erro: any) => {
@@ -129,9 +132,9 @@ const executarCodigo = async function () {
                 }
             });
         }
-    } catch (error) {
-        const erro = "Erro: " + error
-        mostrarResultadoExecutar(erro)
+    } catch (erro) {
+        const erroFormatado = "Erro: " + erro
+        mostrarResultadoExecutar(erroFormatado)
     }
 };
 
@@ -193,16 +196,16 @@ const compartilharCodigo = function () {
 };
 
 const analisarCodigo = function () {
-    const pitugues = new Pitugues.PituguesWeb("");
+    const pituguesWeb = new Pitugues.PituguesWeb("");
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
 
-    const retornoLexador = pitugues.lexador.mapear(codigo, -1);
-    const retornoAvaliadorSintatico = pitugues.avaliadorSintatico.analisar(retornoLexador);
+    const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
+    const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
     if (retornoAvaliadorSintatico.erros.length > 0) {
         return mapearErros(retornoAvaliadorSintatico.erros);
     }
 
-    const analisadorSemantico = pitugues.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+    const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
     const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
     mapearAvisos(errosAnaliseSemantica);
@@ -214,8 +217,6 @@ function definirLinguagemPitugues() {
     tokenPostfix: ['pitugues', '.pitu'],
 
     keywords: [
-      // Should match the keys of textToKeywordObj in
-      // https://github.com/microsoft/TypeScript/blob/master/src/compiler/scanner.ts
       'cada',
       'caso',
       'classe',
@@ -238,6 +239,8 @@ function definirLinguagemPitugues() {
       'inteiro[]',
       'isto',
       'leia',
+      'numero',
+      'número',
       'nulo',
       'padrão',
       'padrao',
@@ -249,9 +252,7 @@ function definirLinguagemPitugues() {
       'real[]',
       'retorna',
       'se',
-      'senão se',
       'senão',
-      'senao se',
       'senao',
       'sustar',
       'tente',
@@ -301,6 +302,7 @@ function definirLinguagemPitugues() {
       'encontrar',
       'escreva',
       'filtrarPor',
+      'inclui',
       'incluido',
       'incluído',
       'inteiro',
@@ -525,8 +527,45 @@ const configurarAtualizacaoAutomatica = function () {
     });
 };
 
+
+// Informações sobre os módulos disponíveis
+const informacoesModulos = {
+    'criptografia': {
+        descricao: 'Módulo para operações criptográficas, incluindo hashing, criptografia simétrica e assimétrica, codificação Base64 e geração de chaves.',
+        repositorio: 'https://github.com/DesignLiquido/delegua-criptografia',
+        metodosDestaque: ['md5', 'sha256', 'criptografarAes256', 'gerarParChavesRsa', 'codificarBase64']
+    },
+    'estatistica': {
+        descricao: 'Módulo para cálculos estatísticos.',
+        repositorio: 'https://github.com/DesignLiquido/delegua-estatistica',
+        metodosDestaque: []
+    },
+    'fisica': {
+        descricao: 'Módulo para cálculos e constantes físicas.',
+        repositorio: 'https://github.com/DesignLiquido/delegua-fisica',
+        metodosDestaque: []
+    },
+    'matematica': {
+        descricao: 'Módulo para operações matemáticas avançadas.',
+        repositorio: 'https://github.com/DesignLiquido/delegua-matematica',
+        metodosDestaque: []
+    },
+    'tempo': {
+        descricao: 'Módulo para manipulação de datas e tempo.',
+        repositorio: 'https://github.com/DesignLiquido/delegua-tempo',
+        metodosDestaque: []
+    },
+    'json': {
+        descricao: 'Módulo para manipulação de dados JSON.',
+        repositorio: null,
+        metodosDestaque: []
+    }
+};
+
 const configurarLinguagemPitugues = function () {
-    const primitivas = (globalThis as any).primitivas;
+    const documentacoesBibliotecas = pituguesWeb.documentacoesBibliotecas;
+    const primitivas: IPrimitiva[] = (globalThis as any).primitivas;
+
     Monaco.languages.register({ id: 'pitugues',
         extensions: ['.pitu'],
         aliases: ['Pituguês', 'language-generation'],
@@ -536,6 +575,134 @@ const configurarLinguagemPitugues = function () {
 
 
     Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemPitugues());
+
+    
+    Monaco.languages.registerSignatureHelpProvider('pitugues', {
+        signatureHelpTriggerCharacters: ['(', ','],
+        signatureHelpRetriggerCharacters: [','],
+        provideSignatureHelp: (model, position) => {
+            const linha = model.getLineContent(position.lineNumber);
+            const textoAntesCursor = linha.substring(0, position.column - 1);
+            
+            // Encontrar a chamada de função mais recente antes do cursor
+            // Match pattern: biblioteca.metodo( ou apenas metodo(
+            const matchFuncao = textoAntesCursor.match(/(\w+)\.(\w+)\([^)]*$/);
+            
+            if (matchFuncao) {
+                const nomeBiblioteca = matchFuncao[1];
+                const nomeMetodo = matchFuncao[2];
+                const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
+                
+                if (documentacaoBiblioteca) {
+                    const metodo = documentacaoBiblioteca[nomeMetodo];
+                    
+                    if (metodo && metodo.argumentos) {
+                        // Contar quantos argumentos já foram digitados (contando vírgulas)
+                        const dentroParenteses = textoAntesCursor.split('(').pop();
+                        const numeroVirgulas = (dentroParenteses.match(/,/g) || []).length;
+                        const parametroAtivo = numeroVirgulas;
+                        
+                        // Construir o label e calcular os ranges para cada parâmetro
+                        const prefixo = `${nomeBiblioteca}.${nomeMetodo}(`;
+                        let labelCompleto = prefixo;
+                        const parametros: any[] = [];
+                        
+                        metodo.argumentos.forEach((arg, index) => {
+                            const inicioParam = labelCompleto.length;
+                            const nomeParam = `${arg.nome}${arg.opcional ? '?' : ''}`;
+                            labelCompleto += nomeParam;
+                            const fimParam = labelCompleto.length;
+                            
+                            parametros.push({
+                                label: [inicioParam, fimParam], // Range do parâmetro no label
+                                documentation: arg.descricao || `${arg.nome}: ${arg.tipo || 'qualquer'}`
+                            });
+                            
+                            // Adicionar vírgula se não for o último parâmetro
+                            if (index < metodo.argumentos.length - 1) {
+                                labelCompleto += ', ';
+                            }
+                        });
+                        
+                        const retornoTexto = metodo.tipoRetorno ? ` → ${metodo.tipoRetorno}` : '';
+                        labelCompleto += `)${retornoTexto}`;
+                        
+                        // Extrair apenas a primeira descrição do markdown (após o título)
+                        let descricaoSimples = '';
+                        if (metodo.documentacao) {
+                            const linhas = metodo.documentacao.split('\n');
+                            // Pular o título (primeira linha) e linhas vazias, pegar a primeira linha de conteúdo
+                            for (let i = 1; i < linhas.length; i++) {
+                                const linha = linhas[i].trim();
+                                if (linha && !linha.startsWith('#') && !linha.startsWith('```')) {
+                                    descricaoSimples = linha;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        return {
+                            value: {
+                                signatures: [{
+                                    label: labelCompleto,
+                                    documentation: descricaoSimples,
+                                    parameters: parametros
+                                }],
+                                activeSignature: 0,
+                                activeParameter: Math.min(parametroAtivo, parametros.length - 1)
+                            },
+                            dispose: () => {}
+                        };
+                    }
+                }
+            }
+            
+            return {
+                value: { signatures: [], activeSignature: 0, activeParameter: 0 },
+                dispose: () => {}
+            };
+        }
+    });
+
+    Monaco.languages.registerCompletionItemProvider('pitugues', {
+        triggerCharacters: ['.'],
+        provideCompletionItems: (model, position) => {
+            const linha = model.getLineContent(position.lineNumber);
+            const textoAntesCursor = linha.substring(0, position.column - 1);
+            
+            // Verificar se estamos após um ponto (ex: criptografia.)
+            const matchBiblioteca = textoAntesCursor.match(/(\w+)\.(\w*)$/);
+            
+            if (matchBiblioteca) {
+                const nomeBiblioteca = matchBiblioteca[1];
+                const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
+                
+                if (documentacaoBiblioteca) {
+                    const sugestoesMetodos = Object.keys(documentacaoBiblioteca).map(nomeMetodo => {
+                        const metodo = documentacaoBiblioteca[nomeMetodo];
+                        const argumentos = metodo.argumentos || [];
+                        const argsTexto = argumentos
+                            .map((arg, index) => {
+                                const placeholder = `\${${index + 1}:${arg.nome}}`;
+                                return arg.opcional ? placeholder : placeholder;
+                            })
+                            .join(', ');
+                        
+                        return {
+                            label: nomeMetodo,
+                            kind: 1, // Method
+                            insertText: `${nomeMetodo}(${argsTexto})`,
+                            insertTextRules: 4, // InsertAsSnippet
+                            documentation: metodo.documentacao || '',
+                            detail: metodo.tipoRetorno ? `→ ${metodo.tipoRetorno}` : ''
+                        };
+                    });
+                    
+                    return { suggestions: sugestoesMetodos };
+                }
+            }
+        }
+    });
 
 
     Monaco.languages.registerCompletionItemProvider('pitugues', {
@@ -565,6 +732,9 @@ const configurarLinguagemPitugues = function () {
     Monaco.languages.registerHoverProvider('pitugues', {
         provideHover: function (model, position) {
             const palavra = model.getWordAtPosition(position);
+                if (!palavra) return { contents: [] };
+            
+            // Verificar primitivas nativas
             const primitiva = primitivas.find(p => p.nome === palavra?.word)
             if (primitiva) {
                 return {
@@ -575,8 +745,86 @@ const configurarLinguagemPitugues = function () {
                     ]
                 }
             }
-            return { contents: [] }
+            
+            // Verificar métodos de bibliotecas (ex: criptografia.md5)
+            // Precisamos verificar se há um ponto antes da palavra atual
+            const linha = model.getLineContent(position.lineNumber);
+            const inicioColuna = palavra.startColumn - 1;
+            
+            // Verificar se há um ponto antes da palavra
+            if (inicioColuna > 0 && linha[inicioColuna - 1] === '.') {
+                // Procurar o nome da biblioteca antes do ponto
+                const textoAntesPonto = linha.substring(0, inicioColuna - 1);
+                const matchBiblioteca = textoAntesPonto.match(/(\w+)$/);
+                
+                if (matchBiblioteca) {
+                    const nomeBiblioteca = matchBiblioteca[1];
+                    const nomeMetodo = palavra.word;
+                    const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
+                    
+                    if (documentacaoBiblioteca && nomeMetodo) {
+                        const metodo = documentacaoBiblioteca[nomeMetodo];
+                        if (metodo) {
+                            const contents = [
+                                { value: `**${nomeBiblioteca}.${nomeMetodo}**` }
+                            ];
+                            
+                            if (metodo.documentacao) {
+                                contents.push({ value: metodo.documentacao });
+                            }
+                            
+                            if (metodo.exemploCodigo) {
+                                contents.push({ value: `\`\`\`delegua\n${metodo.exemploCodigo}\n\`\`\`` });
+                            }
+                            
+                            return { contents };
+                        }
+                    }
+                }
+            }
+            
+            // Verificar se é o nome de um módulo (sem ponto depois)
+            const nomeModulo = palavra.word;
+            const infoModulo = informacoesModulos[nomeModulo];
+            const documentacaoBiblioteca = documentacoesBibliotecas[nomeModulo];
+            
+            if (infoModulo || documentacaoBiblioteca) {
+                const contents = [
+                    { value: `**${nomeModulo}** _(módulo)_` }
+                ];
+                
+                if (infoModulo?.descricao) {
+                    contents.push({ value: infoModulo.descricao });
+                }
+                
+                // Listar métodos disponíveis
+                if (documentacaoBiblioteca) {
+                    const metodos = Object.keys(documentacaoBiblioteca);
+                    const metodosExibir = infoModulo?.metodosDestaque?.length > 0 
+                        ? infoModulo.metodosDestaque 
+                        : metodos.slice(0, 5);
+                    
+                    if (metodosExibir.length > 0) {
+                        const listaMetodos = metodosExibir.map(m => `- \`${nomeModulo}.${m}()\``).join('\n');
+                        const sufixo = metodos.length > metodosExibir.length 
+                            ? `\n\n_...e mais ${metodos.length - metodosExibir.length} métodos_` 
+                            : '';
+                        contents.push({ 
+                            value: `**Métodos disponíveis:**\n${listaMetodos}${sufixo}` 
+                        });
+                    }
+                }
+                
+                if (infoModulo?.repositorio) {
+                    contents.push({ value: `[📦 Repositório](${infoModulo.repositorio})` });
+                }
+                
+                return { contents };
+            }
+            
+            return { contents: [] };
         }
+    
     })
 }
 
