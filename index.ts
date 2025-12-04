@@ -14,6 +14,8 @@ import { TradutorJavaScript, TradutorPython, TradutorAssemblyScript } from "@des
 import { Declaracao } from "@designliquido/delegua/declaracoes";
 import { InformacaoElementoSintatico } from "@designliquido/delegua/informacao-elemento-sintatico";
 
+import * as criptografia from "@designliquido/delegua-criptografia";
+import { DeleguaModuloCriptografia } from "@designliquido/delegua-criptografia/delegua-modulo";
 import * as estatistica from "@designliquido/delegua-estatistica";
 import * as fisica from "@designliquido/delegua-fisica";
 import * as matematica from "@designliquido/delegua-matematica";
@@ -37,7 +39,7 @@ export class PituguesWeb {
     avaliadorSintatico: AvaliadorSintaticoInterface<SimboloInterface, Declaracao>;
     analisadorSemantico: AnalisadorSemantico;
     funcaoDeRetorno: Function;
-
+    documentacoesBibliotecas: { [nomeBiblioteca: string]: any } 
     tradutorJavascript = new TradutorJavaScript();
     tradutorPython = new TradutorPython();
     tradutorAssemblyScript = new TradutorAssemblyScript();
@@ -62,6 +64,11 @@ export class PituguesWeb {
                 callback(resposta);
             }
         }
+
+        this.documentacoesBibliotecas = {};
+
+        this.registrarModuloComPrimitivas("criptografia", criptografia);
+        this.documentacoesBibliotecas["criptografia"] = DeleguaModuloCriptografia;
 
         this.registrarModuloComPrimitivas("estatistica", estatistica);
         this.registrarModuloComPrimitivas("fisica", fisica);

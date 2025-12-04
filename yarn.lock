@@ -152,6 +152,11 @@
     "@types/lodash.mergewith" "4.6.9"
     lodash.mergewith "4.6.2"
 
+"@designliquido/delegua-criptografia@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@designliquido/delegua-criptografia/-/delegua-criptografia-0.0.4.tgz#ee937c586aa5094b0c2d8794228c5719943a9b02"
+  integrity sha512-CWOIo3jhBCCCQ/SfUH79N/u05oMq14FvmSZdefVL3vnK19+xSLKWHf2JxH7r9bFt1P4I3I9jSTM3nvqOsDlcxQ==
+
 "@designliquido/delegua-estatistica@^0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@designliquido/delegua-estatistica/-/delegua-estatistica-0.1.0.tgz"
