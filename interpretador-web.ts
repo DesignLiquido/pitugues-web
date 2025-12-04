@@ -5,6 +5,7 @@ import { ErroEmTempoDeExecucao } from "@designliquido/delegua/excecoes";
 
 
 
+
 export class InterpretadorWeb 
     extends Interpretador
 {
@@ -28,7 +29,7 @@ export class InterpretadorWeb
             case 'tempo':
                 const variavelDoModulo = this.pilhaEscoposExecucao.obterVariavelPorNome(caminhoResolvido.valor);
                 const moduloResolvido = variavelDoModulo.valor as DeleguaModulo;
-                return moduloResolvido;
+                return Promise.resolve(moduloResolvido);
             default:
                 throw new ErroEmTempoDeExecucao(
                     {
