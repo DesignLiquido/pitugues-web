@@ -1,11 +1,6 @@
 import { Importar, Interpretador, Literal, SimboloInterface } from "@designliquido/delegua";
 import { DeleguaModulo } from "@designliquido/delegua/interpretador/estruturas";
 import { ErroEmTempoDeExecucao } from "@designliquido/delegua/excecoes";
-
-
-
-
-
 export class InterpretadorWeb 
     extends Interpretador
 {
@@ -22,6 +17,7 @@ export class InterpretadorWeb
         // TODO: Resolver isso não considerando que é um Literal.
         const caminhoResolvido = declaracao.caminho as Literal;
         switch (caminhoResolvido.valor) {
+            case 'criptografia':
             case 'estatistica':
             case 'fisica':
             case 'json':
