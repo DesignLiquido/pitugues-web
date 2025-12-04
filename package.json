@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^2.10.9",
+    "@designliquido/delegua": "^0.61.3",
     "@designliquido/delegua-criptografia": "^0.0.4",
-    "@designliquido/delegua": "^0.61.2",
     "@designliquido/delegua-estatistica": "^0.1.0",
     "@designliquido/delegua-fisica": "^0.1.0",
     "@designliquido/delegua-json": "^0.2.1",
