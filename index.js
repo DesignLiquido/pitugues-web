@@ -52,6 +52,8 @@ const analisador_semantico_1 = require("@designliquido/delegua/analisador-semant
 const estruturas_1 = require("@designliquido/delegua/interpretador/estruturas");
 const tradutores_1 = require("@designliquido/delegua/tradutores");
 const informacao_elemento_sintatico_1 = require("@designliquido/delegua/informacao-elemento-sintatico");
+const criptografia = __importStar(require("@designliquido/delegua-criptografia"));
+const delegua_modulo_1 = require("@designliquido/delegua-criptografia/delegua-modulo");
 const estatistica = __importStar(require("@designliquido/delegua-estatistica"));
 const fisica = __importStar(require("@designliquido/delegua-fisica"));
 const matematica = __importStar(require("@designliquido/delegua-matematica"));
@@ -80,6 +82,9 @@ class PituguesWeb {
                 callback(resposta);
             }
         };
+        this.documentacoesBibliotecas = {};
+        this.registrarModuloComPrimitivas("criptografia", criptografia);
+        this.documentacoesBibliotecas["criptografia"] = delegua_modulo_1.DeleguaModuloCriptografia;
         this.registrarModuloComPrimitivas("estatistica", estatistica);
         this.registrarModuloComPrimitivas("fisica", fisica);
         this.registrarModuloComPrimitivas("json", json);
