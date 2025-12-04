@@ -23,7 +23,6 @@ const mostrarResultadoExecutar = function (codigo: string) {
 };
 const pituguesWeb = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
 
-const pituguesWeb = new Pitugues.PituguesWeb("", mostrarResultadoExecutar);
 const limparResultadoEditor = function () {
     resultadoEditorDiv.innerHTML = "";
 };
