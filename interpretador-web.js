@@ -21,6 +21,7 @@ class InterpretadorWeb extends delegua_1.Interpretador {
             // TODO: Resolver isso não considerando que é um Literal.
             const caminhoResolvido = declaracao.caminho;
             switch (caminhoResolvido.valor) {
+                case 'criptografia':
                 case 'estatistica':
                 case 'fisica':
                 case 'json':
@@ -28,7 +29,7 @@ class InterpretadorWeb extends delegua_1.Interpretador {
                 case 'tempo':
                     const variavelDoModulo = this.pilhaEscoposExecucao.obterVariavelPorNome(caminhoResolvido.valor);
                     const moduloResolvido = variavelDoModulo.valor;
-                    return moduloResolvido;
+                    return Promise.resolve(moduloResolvido);
                 default:
                     throw new excecoes_1.ErroEmTempoDeExecucao({
                         hashArquivo: -1,
