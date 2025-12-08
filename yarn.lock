@@ -152,10 +152,10 @@
     "@types/lodash.mergewith" "4.6.9"
     lodash.mergewith "4.6.2"
 
-"@designliquido/delegua-criptografia@^0.0.4":
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/@designliquido/delegua-criptografia/-/delegua-criptografia-0.0.4.tgz#ee937c586aa5094b0c2d8794228c5719943a9b02"
-  integrity sha512-CWOIo3jhBCCCQ/SfUH79N/u05oMq14FvmSZdefVL3vnK19+xSLKWHf2JxH7r9bFt1P4I3I9jSTM3nvqOsDlcxQ==
+"@designliquido/delegua-criptografia@^0.3.3":
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/@designliquido/delegua-criptografia/-/delegua-criptografia-0.3.3.tgz#42d39ee27b4c7abb05656829ef6526655464a117"
+  integrity sha512-eIOZT+/MRJFDWru/yJHmxXyjNfMQ2tff6ioapb5YR/LmYdoa5ELtueVhFzpXEgPLksCLLjrntNPFFhXe5g2KXQ==
 
 "@designliquido/delegua-estatistica@^0.1.0":
   version "0.1.0"
@@ -186,10 +186,10 @@
   dependencies:
     dayjs "^1.11.13"
 
-"@designliquido/delegua@^0.63.0":
-  version "0.63.0"
-  resolved "https://registry.yarnpkg.com/@designliquido/delegua/-/delegua-0.63.0.tgz#9c3a4cf79832cdafbcbdc27715f8ecf37947c29d"
-  integrity sha512-oYD45CKCL8tvGB4oLYJ0R6JgQ9BbJ3X2p2fdjBbzypGN6AfNIxRTdW2gDaS/DYj0gEuFdKipQrSFSB5StNDnow==
+"@designliquido/delegua@^0.64.0":
+  version "0.64.0"
+  resolved "https://registry.yarnpkg.com/@designliquido/delegua/-/delegua-0.64.0.tgz#62e951d3ac32c81b7edac82b90c33a181bdb9ba8"
+  integrity sha512-I45tOIaeTSJCfIywdB+weicXQNI0DUgsc7l7XWhninCdpETzqQHPNS3i3Gr5mlZaQhiwPSG+ffrsU+/+yAPCZw==
   dependencies:
     antlr4ts "^0.5.0-alpha.4"
     browser-process-hrtime "^1.0.0"
