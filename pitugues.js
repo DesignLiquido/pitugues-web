@@ -7618,18 +7618,18 @@ class AvaliadorSintaticoPitugues {
         }
         return false;
     }
-    declaracaoDeVariaveis() {
+    consumirIdentificadores() {
         const identificadores = [];
         let indexResto = -1;
         do {
             let ehRestoAtual = false;
-            // Verifica se o * veio como token separado
+            // Verifica * como token separado
             if (this.verificarTipoSimboloAtual(pitugues_2.default.MULTIPLICACAO)) {
                 this.consumir(pitugues_2.default.MULTIPLICACAO, '');
                 ehRestoAtual = true;
             }
             const identificador = this.consumir(pitugues_2.default.IDENTIFICADOR, ehRestoAtual ? 'Esperado nome de variável após operador *.' : 'Esperado nome de variável.');
-            // Verifica se o * veio como parte do nome da variável
+            // Verifica * no nome da variável
             if (identificador.lexema.startsWith('*')) {
                 ehRestoAtual = true;
                 identificador.lexema = identificador.lexema.slice(1);
@@ -7642,7 +7642,9 @@ class AvaliadorSintaticoPitugues {
             }
             identificadores.push(identificador);
         } while (this.verificarSeSimboloAtualEIgualA(pitugues_2.default.VIRGULA));
-        this.consumir(pitugues_2.default.IGUAL, 'Esperado o símbolo igual(=) após identificador.');
+        return { simbolos: identificadores, indexResto };
+    }
+    consumirInicializadores() {
         const inicializadores = [];
         do {
             if (this.estaNoFinal()) {
@@ -7650,21 +7652,56 @@ class AvaliadorSintaticoPitugues {
             }
             inicializadores.push(this.expressao());
         } while (this.verificarSeSimboloAtualEIgualA(pitugues_2.default.VIRGULA));
+        return inicializadores;
+    }
+    construirValidacaoDesempacotamento(identificador, origem, qtdEsperada) {
+        const linha = identificador.linha;
+        const chamadaTamanho = new construtos_1.Chamada(this.hashArquivo, new construtos_1.Variavel(this.hashArquivo, new lexador_1.Simbolo(pitugues_2.default.IDENTIFICADOR, "tamanho", null, linha, -1)), [origem]);
+        const condicaoErro = new construtos_1.Binario(this.hashArquivo, chamadaTamanho, new lexador_1.Simbolo(pitugues_2.default.DIFERENTE, "!=", null, linha, -1), new construtos_1.Literal(this.hashArquivo, linha, qtdEsperada, 'número'));
+        const mensagem = `Erro de execução: Você tentou desempacotar em ${qtdEsperada} variáveis, mas o vetor possui tamanho diferente.`;
+        const falha = new declaracoes_1.Falhar(new lexador_1.Simbolo(pitugues_2.default.FALHAR, "falhar", null, linha, -1), new construtos_1.Literal(this.hashArquivo, linha, mensagem, 'texto'));
+        return new declaracoes_1.Se(condicaoErro, new declaracoes_1.Bloco(this.hashArquivo, linha, [falha]), [], null);
+    }
+    declaracaoDeVariaveis() {
+        const { simbolos: identificadores, indexResto } = this.consumirIdentificadores();
+        this.consumir(pitugues_2.default.IGUAL, 'Esperado o símbolo igual(=) após identificador.');
+        const inicializadores = this.consumirInicializadores();
         const qtdIdentificadores = identificadores.length;
         const qtdValores = inicializadores.length;
+        const ehDesempacotamento = qtdIdentificadores > 1 && qtdValores === 1;
         if (indexResto > -1) {
-            // Com resto: precisa de valores suficientes para cobrir as variáveis obrigatórias.
             if (qtdValores < qtdIdentificadores - 1) {
-                throw this.erro(this.simboloAnterior(), 'Quantidade insuficiente de valores para desempacotamento com operador de resto.');
+                if (!ehDesempacotamento || (ehDesempacotamento && inicializadores[0] instanceof construtos_1.Literal)) {
+                    throw this.erro(this.simboloAnterior(), 'Quantidade insuficiente de valores para desempacotamento com operador de resto.');
+                }
             }
         }
         else {
-            // Sem resto: a quantidade deve ser exata.
-            if (qtdIdentificadores !== qtdValores) {
+            if (!ehDesempacotamento && qtdIdentificadores !== qtdValores) {
                 throw this.erro(this.simboloAnterior(), 'Quantidade de inicializadores à esquerda do igual é diferente da quantidade de identificadores à direita.');
+            }
+            if (ehDesempacotamento && inicializadores[0] instanceof construtos_1.Vetor) {
+                const vetor = inicializadores[0];
+                if (vetor.tamanho !== qtdIdentificadores) {
+                    throw this.erro(this.simboloAnterior(), `O vetor possui ${vetor.tamanho} elementos, mas você tentou desempacotar em ${qtdIdentificadores} variáveis.`);
+                }
             }
         }
         const retorno = [];
+        let origemParaAtribuicao = inicializadores[0];
+        // Injeção de Código (Runtime Check)
+        if (ehDesempacotamento && !(inicializadores[0] instanceof construtos_1.Vetor)) {
+            const linha = identificadores[0].linha;
+            // Cria variável temporária para evitar reavaliar a expressão original múltiplas vezes
+            const nomeVarTemp = `__temp_desempacotamento_${new Date().getTime()}_${Math.floor(Math.random() * 1000)}`;
+            const simboloVarTemp = new lexador_1.Simbolo(pitugues_2.default.IDENTIFICADOR, nomeVarTemp, null, linha, -1);
+            retorno.push(new declaracoes_1.Var(simboloVarTemp, inicializadores[0], 'qualquer[]'));
+            origemParaAtribuicao = new construtos_1.Variavel(this.hashArquivo, simboloVarTemp);
+            // Injeta validação de tamanho se não houver operador de resto
+            if (indexResto === -1) {
+                retorno.push(this.construirValidacaoDesempacotamento(identificadores[0], origemParaAtribuicao, qtdIdentificadores));
+            }
+        }
         let cursorValores = 0;
         const qtdParaResto = qtdValores - (qtdIdentificadores - 1);
         for (let i = 0; i < identificadores.length; i++) {
@@ -7672,18 +7709,23 @@ class AvaliadorSintaticoPitugues {
             let inicializador;
             let tipo = "qualquer";
             if (i === indexResto) {
-                // Caso Resto (*): absorve N valores em um Vetor e força tipagem de array.
                 const valoresResto = inicializadores.slice(cursorValores, cursorValores + qtdParaResto);
                 let tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(valoresResto);
-                if (!tipoInferido.endsWith('[]')) {
+                if (!tipoInferido.endsWith('[]'))
                     tipoInferido = `${tipoInferido}[]`;
-                }
                 inicializador = new construtos_1.Vetor(identificador.hashArquivo, identificador.linha, valoresResto, valoresResto.length, tipoInferido);
                 tipo = tipoInferido;
                 cursorValores += qtdParaResto;
             }
+            else if (ehDesempacotamento) {
+                if (inicializadores[0] instanceof construtos_1.Vetor) {
+                    inicializador = inicializadores[0].valores[i];
+                }
+                else {
+                    inicializador = new construtos_1.AcessoIndiceVariavel(this.hashArquivo, origemParaAtribuicao, new construtos_1.Literal(this.hashArquivo, identificador.linha, i, 'número'), new lexador_1.Simbolo(pitugues_2.default.COLCHETE_DIREITO, ']', null, identificador.linha, -1));
+                }
+            }
             else {
-                // Caso comum: consome 1 valor
                 inicializador = inicializadores[cursorValores];
                 cursorValores++;
                 tipo = this.logicaComumInferenciaTiposVariaveisEConstantes(inicializador, tipo);
@@ -17611,6 +17653,8 @@ class InterpretadorBase {
                 return (objetoAcessado as AcessoMetodoOuPropriedade).simbolo.lexema;
             case AcessoIndiceVariavel:
                 return this.resolverNomeObjectoAcessado((objetoAcessado as AcessoIndiceVariavel).entidadeChamada); */
+            case construtos_1.Chamada:
+                return this.resolverNomeObjectoAcessado(objetoAcessado.entidadeChamada);
             case construtos_1.Constante:
                 return objetoAcessado.simbolo.lexema;
             case construtos_1.AcessoMetodoOuPropriedade:
