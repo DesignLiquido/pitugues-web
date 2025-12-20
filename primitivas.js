@@ -1658,6 +1658,10 @@ class Binario {
             ['logico', 'lógico'].includes(this.direita.tipo)) {
             return 'lógico';
         }
+        if (this.esquerda.tipo === 'texto' ||
+            this.direita.tipo === 'texto') {
+            return 'texto';
+        }
         if (['numero', 'número'].includes(this.esquerda.tipo) ||
             ['numero', 'número'].includes(this.direita.tipo)) {
             return 'número';
