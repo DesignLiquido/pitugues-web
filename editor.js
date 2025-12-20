@@ -105,7 +105,7 @@ const executarCodigo = function () {
             if (retornoAvaliadorSintatico.erros.length > 0) {
                 return mapearErros(retornoAvaliadorSintatico.erros);
             }
-            const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+            const analisadorSemantico = yield pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
             const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
             if (errosAnaliseSemantica === null || errosAnaliseSemantica === void 0 ? void 0 : errosAnaliseSemantica.length) {
                 mapearAvisos(errosAnaliseSemantica);
@@ -158,8 +158,7 @@ const mostrarToastNotificacao = function (mensagem, sucesso = true) {
 };
 const compartilharCodigo = function () {
     try {
-        const editor = Monaco.editor.getEditors()[0];
-        const modelo = editor.getModels()[0];
+        const modelo = Monaco.editor.getModels()[0];
         const codigo = modelo.getValue();
         const codigoBase64 = btoa(codigo);
         const baseUrl = window.location.origin + window.location.pathname;
@@ -175,16 +174,18 @@ const compartilharCodigo = function () {
     }
 };
 const analisarCodigo = function () {
-    const pituguesWeb = new Pitugues.PituguesWeb("");
-    const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
-    const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
-    const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
-    if (retornoAvaliadorSintatico.erros.length > 0) {
-        return mapearErros(retornoAvaliadorSintatico.erros);
-    }
-    const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
-    const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
-    mapearAvisos(errosAnaliseSemantica);
+    return __awaiter(this, void 0, void 0, function* () {
+        const pituguesWeb = new Pitugues.PituguesWeb("");
+        const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
+        const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
+        const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+        if (retornoAvaliadorSintatico.erros.length > 0) {
+            return mapearErros(retornoAvaliadorSintatico.erros);
+        }
+        const analisadorSemantico = yield pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+        const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
+        mapearAvisos(errosAnaliseSemantica);
+    });
 };
 function definirLinguagemPitugues() {
     return {
