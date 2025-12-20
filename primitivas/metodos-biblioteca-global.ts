@@ -9,7 +9,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna um número aleatório entre 0 e 1.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeroAleatorio = aleatorio()\n' +
+            'numeroAleatorio = aleatorio()\n' +
             'escreva(numeroAleatorio) // 0.8540051495195808\n' +
             '```',
         exemploCodigo: 'aleatorio()'
@@ -21,7 +21,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'O valor gerado aleatoriamente nunca será igual ao número máximo passado para a função: sempre será uma unidade a menos que o máximo.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeroAleatorio = aleatorioEntre(1, 9)\n' +
+            'numeroAleatorio = aleatorioEntre(1, 9)\n' +
             'escreva(numeroAleatorio) // Retorna um valor entre 1 e 8\n' +
             '```',
         exemploCodigo: 'aleatorioEntre(minimo, maximo)'
@@ -33,9 +33,9 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'mesmo quando se trata de estruturas de dados aninhadas como vetores, dicionários ou objetos.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var original = [1, [2, 3], 4]\n' +
-            'var copia = clonar(original)\n' +
-            'var subVetor = copia[1]\n' +
+            'original = [1, [2, 3], 4]\n' +
+            'copia = clonar(original)\n' +
+            'subVetor = copia[1]\n' +
             'subVetor[0] = 99\n' +
             'escreva(original[1][0]) // 2\n' +
             'escreva(copia[1][0]) // 99\n' +
@@ -48,7 +48,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Verifica se pelo menos um elemento do vetor satisfaz a condição fornecida pela função de teste.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [1, 2, 3, 4, 5];\n' +
+            'numeros = [1, 2, 3, 4, 5];\n' +
             'funcao ehPar(valor):\n' +
             '    retorna valor % 2 == 0;\n' +
             'escreva(algum(numeros, ehPar)); // verdadeiro\n' +
@@ -61,7 +61,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o primeiro elemento do vetor que satisfaz a função de teste fornecida.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [5, 12, 8, 130, 44];\n' +
+            'numeros = [5, 12, 8, 130, 44];\n' +
             'funcao maiorQue10(valor):\n' +
             '    retorna valor > 10;\n' +
             'escreva(encontrar(numeros, maiorQue10)); // 12\n' +
@@ -74,7 +74,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o índice do primeiro elemento do vetor que satisfaz a função de teste fornecida.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [5, 12, 8, 130, 44];\n' +
+            'numeros = [5, 12, 8, 130, 44];\n' +
             'funcao maiorQue10(valor):\n' +
             '    retorna valor > 10;\n' +
             'escreva(encontrarIndice(numeros, maiorQue10)); // 1\n' +
@@ -87,7 +87,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o último elemento do vetor que satisfaz a função de teste fornecida, percorrendo o vetor do fim para o início.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [5, 12, 8, 130, 44]\n' +
+            'numeros = [5, 12, 8, 130, 44]\n' +
             'funcao maiorQue10(valor):\n' +
             '    retorna valor > 10\n' +
             'escreva(encontrarUltimo(numeros, maiorQue10)) // 44\n' +
@@ -100,7 +100,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o índice do último elemento do vetor que satisfaz a função de teste fornecida.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [5, 12, 8, 130, 44]\n' +
+            'numeros = [5, 12, 8, 130, 44]\n' +
             'funcao maiorQue10(valor):\n' +
             '    retorna valor > 10\n' +
             'escreva(encontrarUltimoIndice(numeros, maiorQue10)) // 4\n' +
@@ -114,8 +114,8 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             '### Interpolação\n\n' +
             'Pitugues suporta interpolação de variáveis:\n' +
             '```pitugues\n' +
-            'var comidaFavorita = "strogonoff"\n' +
-            'escreva("Minha comida favorita é ${comidaFavorita}")\n' +
+            'comidaFavorita = "strogonoff"\n' +
+            'escreva(f"Minha comida favorita é {comidaFavorita}")\n' +
             '```',
         exemploCodigo: 'escreva(...argumentos)'
     },
@@ -125,12 +125,24 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Percorre um vetor executando uma função para cada item. Se o valor retornado pela função é verdadeiro, o valor testado é acumulado em um novo vetor.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var vetor = [1, 2, 3, 4, 5, 6]\n' +
-            'var fn = funcao(valor):\n' +
+            'vetor = [1, 2, 3, 4, 5, 6]\n' +
+            'fn = funcao(valor):\n' +
             '    retorna valor % 2 == 0\n' +
             'escreva(filtrarPor(vetor, fn)) // [2, 4, 6]\n' +
             '```',
         exemploCodigo: 'filtrarPor(vetor, funcaoTeste)'
+    },
+    {
+        nome: 'imprima',
+        documentacao: '### Descrição\n\n' +
+            'Escreve um ou mais argumentos na saída padrão da aplicação.\n\n' +
+            '### Interpolação\n\n' +
+            'Pitugues suporta interpolação de variáveis:\n' +
+            '```pitugues\n' +
+            'comidaFavorita = "strogonoff"\n' +
+            'imprima(f"Minha comida favorita é {comidaFavorita}")\n' +
+            '```',
+        exemploCodigo: 'escreva(...argumentos)'
     },
     {
         nome: 'inclui',
@@ -138,7 +150,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Verifica se um elemento está presente em um vetor ou texto.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var frutas = ["maçã", "banana", "laranja"]\n' +
+            'frutas = ["maçã", "banana", "laranja"]\n' +
             'escreva(inclui(frutas, "banana")) // verdadeiro\n' +
             'escreva(inclui("Olá Mundo", "Mundo")) // verdadeiro\n' +
             '```',
@@ -150,7 +162,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Sinônimo de `inclui`. Verifica se um elemento está presente em um vetor ou texto.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [1, 2, 3, 4, 5]\n' +
+            'numeros = [1, 2, 3, 4, 5]\n' +
             'escreva(incluido(numeros, 3)) // verdadeiro\n' +
             '```',
         exemploCodigo: 'incluido(vetor, elemento)'
@@ -161,7 +173,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Sinônimo de `inclui`. Verifica se um elemento está presente em um vetor ou texto.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [1, 2, 3, 4, 5]\n' +
+            'numeros = [1, 2, 3, 4, 5]\n' +
             'escreva(incluído(numeros, 3)) // verdadeiro\n' +
             '```',
         exemploCodigo: 'incluído(vetor, elemento)'
@@ -172,7 +184,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Converte um número flutuante ou texto em um número inteiro.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var testeTexto = "111"\n' +
+            'testeTexto = "111"\n' +
             'escreva(111 + inteiro(testeTexto)) // 222\n' +
             'escreva(inteiro(3.7)) // 3\n' +
             '```',
@@ -195,7 +207,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Converte um número inteiro ou texto em um número com porção decimal.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var testeTexto = "111.11"\n' +
+            'testeTexto = "111.11"\n' +
             'escreva(111 + numero(testeTexto)) // 222.11\n' +
             '```',
         exemploCodigo: 'numero(valor)'
@@ -217,7 +229,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Converte um número inteiro ou texto em um número com porção decimal.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var testeTexto = "111.11"\n' +
+            'testeTexto = "111.11"\n' +
             'escreva(111 + número(testeTexto)) // 222.11\n' +
             '```',
         exemploCodigo: 'número(valor)'
@@ -228,8 +240,8 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Percorre um vetor executando uma função para cada item. Diferentemente de filtrar e mapear, o retorno da função não é observado.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var vetor = [1, 2, 3]\n' +
-            'var fn = funcao(valor):\n' +
+            'vetor = [1, 2, 3]\n' +
+            'fn = funcao(valor):\n' +
             '    escreva(valor * 2)\n' +
             'paraCada(vetor, fn)\n' +
             '// 2\n' +
@@ -244,7 +256,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o primeiro elemento do vetor que satisfaz a condição fornecida.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [5, 12, 8, 130, 44]\n' +
+            'numeros = [5, 12, 8, 130, 44]\n' +
             'funcao maiorQue10(valor):\n' +
             '    retorna valor > 10\n' +
             'escreva(primeiroEmCondicao(numeros, maiorQue10)) // 12\n' +
@@ -257,7 +269,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Converte um número inteiro ou texto em um número flutuante (real).' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var testeTexto = "504.69"\n' +
+            'testeTexto = "504.69"\n' +
             'escreva(0.01 + real(testeTexto)) // 504.7\n' +
             '```',
         exemploCodigo: 'real(valor)'
@@ -268,7 +280,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Executa uma função redutora para cada elemento do vetor, resultando em um único valor.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [1, 2, 3, 4, 5]\n' +
+            'numeros = [1, 2, 3, 4, 5]\n' +
             'funcao somar(acumulador, valor):\n' +
             '    retorna acumulador + valor\n' +
             'escreva(reduzir(numeros, somar, 0))  // 15\n' +
@@ -281,10 +293,10 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna o número de elementos que compõem um vetor ou o número de caracteres de um texto.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var vetorNomes = ["Lucas", "Heictor", "Julio", "Brennus", "Arleson"]\n' +
+            'vetorNomes = ["Lucas", "Heictor", "Julio", "Brennus", "Arleson"]\n' +
             'escreva(tamanho(vetorNomes)) // 5\n' +
             '\n' +
-            'var texto = "Egua"\n' +
+            'texto = "Egua"\n' +
             'escreva(tamanho(texto)) // 4\n' +
             '```',
         exemploCodigo: 'tamanho(vetor)'
@@ -295,7 +307,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Transforma números flutuantes ou inteiros em texto.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numero = 7\n' +
+            'numero = 7\n' +
             'escreva(texto(numero) + " é um número") // "7 é um número"\n' +
             '```',
         exemploCodigo: 'texto(valor)'
@@ -306,7 +318,7 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Verifica se todos os elementos do vetor satisfazem a condição fornecida pela função de teste.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var numeros = [2, 4, 6, 8, 10]\n' +
+            'numeros = [2, 4, 6, 8, 10]\n' +
             'funcao ehPar(valor):\n' +
             '    retorna valor % 2 == 0\n' +
             'escreva(todos(numeros, ehPar)) // verdadeiro\n' +
@@ -319,12 +331,12 @@ export const metodosBibliotecaGlobal: MetodosBibliotecaGlobal = [
             'Retorna verdadeiro se todos os elementos do vetor retornam verdadeiro ao serem aplicados como argumentos da função passada como segundo parâmetro. Retorna falso em caso contrário.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'var meuVetor = [1, 2, 3, 4, 5, 6]\n' +
-            'var f1 = funcao(x):\n' +
+            'meuVetor = [1, 2, 3, 4, 5, 6]\n' +
+            'f1 = funcao(x):\n' +
             '    retorna x < 10\n' +
             'escreva(todosEmCondicao(meuVetor, f1)) // verdadeiro\n' +
             '\n' +
-            'var f2 = funcao(x):\n' +
+            'f2 = funcao(x):\n' +
             '    retorna x % 2 == 0\n' +
             'escreva(todosEmCondicao(meuVetor, f2)) // falso\n' +
             '```',
