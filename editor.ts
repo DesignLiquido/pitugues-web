@@ -115,7 +115,7 @@ const executarCodigo = async function () {
             return mapearErros(retornoAvaliadorSintatico.erros);
         }
 
-        const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+        const analisadorSemantico = await pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
         const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
         if (errosAnaliseSemantica?.length) {
@@ -175,8 +175,7 @@ const mostrarToastNotificacao = function(mensagem: string, sucesso: boolean = tr
 
 const compartilharCodigo = function () {
     try {
-        const editor = Monaco.editor.getEditors()[0];
-        const modelo = editor.getModels()[0];
+        const modelo = Monaco.editor.getModels()[0];
         const codigo = modelo.getValue();
 
         const codigoBase64 = btoa(codigo);
@@ -195,7 +194,7 @@ const compartilharCodigo = function () {
     }
 };
 
-const analisarCodigo = function () {
+const analisarCodigo = async function () {
     const pituguesWeb = new Pitugues.PituguesWeb("");
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
 
@@ -205,7 +204,7 @@ const analisarCodigo = function () {
         return mapearErros(retornoAvaliadorSintatico.erros);
     }
 
-    const analisadorSemantico = pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
+    const analisadorSemantico = await pituguesWeb.analisadorSemantico.analisar(retornoAvaliadorSintatico.declaracoes);
     const errosAnaliseSemantica = analisadorSemantico.diagnosticos;
 
     mapearAvisos(errosAnaliseSemantica);
