@@ -70,27 +70,29 @@ const mapearAvisos = function (avisos) {
     Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', _avisos);
 };
 const executarTradutor = function () {
-    const pituguesWeb = new Pitugues.PituguesWeb("");
-    const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
-    //ts-ignore
-    const linguagem = document.querySelector("#linguagem").value.toLowerCase();
-    const funcoes = {
-        "python": { tradutor: pituguesWeb.tradutorPython, linguagem: "python" },
-        "javascript": { tradutor: pituguesWeb.tradutorJavascript, linguagem: "javascript" },
-        // "assemblyscript": { tradutor: pitugues.tradutorAssemblyScript, linguagem: "typescript" },
-    };
-    if (codigo[0]) {
-        const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
-        const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
-        const funcao = funcoes[linguagem];
-        const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes);
-        if (retornoTradutor) {
-            Monaco.editor.create(document.getElementById("resultadoEditor"), {
-                value: retornoTradutor,
-                language: funcao.linguagem
-            });
+    return __awaiter(this, void 0, void 0, function* () {
+        const pituguesWeb = new Pitugues.PituguesWeb("");
+        const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
+        //ts-ignore
+        const linguagem = document.querySelector("#linguagem").value.toLowerCase();
+        const funcoes = {
+            "python": { tradutor: pituguesWeb.tradutorPython, linguagem: "python" },
+            "javascript": { tradutor: pituguesWeb.tradutorJavascript, linguagem: "javascript" },
+            // "assemblyscript": { tradutor: pitugues.tradutorAssemblyScript, linguagem: "typescript" },
+        };
+        if (codigo[0]) {
+            const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
+            const retornoAvaliadorSintatico = yield pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+            const funcao = funcoes[linguagem];
+            const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes);
+            if (retornoTradutor) {
+                Monaco.editor.create(document.getElementById("resultadoEditor"), {
+                    value: retornoTradutor,
+                    language: funcao.linguagem
+                });
+            }
         }
-    }
+    });
 };
 const executarCodigo = function () {
     return __awaiter(this, void 0, void 0, function* () {
@@ -101,7 +103,7 @@ const executarCodigo = function () {
             const codigo = modelo.getValue().split("\n");
             Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', []);
             const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
-            const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+            const retornoAvaliadorSintatico = yield pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
             if (retornoAvaliadorSintatico.erros.length > 0) {
                 return mapearErros(retornoAvaliadorSintatico.erros);
             }
@@ -178,7 +180,7 @@ const analisarCodigo = function () {
         const pituguesWeb = new Pitugues.PituguesWeb("");
         const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
         const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
-        const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+        const retornoAvaliadorSintatico = yield pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
         if (retornoAvaliadorSintatico.erros.length > 0) {
             return mapearErros(retornoAvaliadorSintatico.erros);
         }
