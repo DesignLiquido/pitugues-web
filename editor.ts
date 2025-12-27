@@ -71,7 +71,7 @@ const mapearAvisos = function (avisos: any[]) {
     Monaco.editor.setModelMarkers(editor.getModel(), 'pitugues', _avisos);
 }
 
-const executarTradutor = function () {
+const executarTradutor = async function () {
     const pituguesWeb = new Pitugues.PituguesWeb("");
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n")
 
@@ -86,7 +86,7 @@ const executarTradutor = function () {
     if (codigo[0]) {
         const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+            await pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
 
         const funcao = funcoes[linguagem]
         const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes)
@@ -110,7 +110,7 @@ const executarCodigo = async function () {
 
         const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
         const retornoAvaliadorSintatico =
-            pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+            await pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
         if (retornoAvaliadorSintatico.erros.length > 0) {
             return mapearErros(retornoAvaliadorSintatico.erros);
         }
@@ -199,7 +199,7 @@ const analisarCodigo = async function () {
     const codigo = Monaco.editor.getModels()[0].getValue().split("\n");
 
     const retornoLexador = pituguesWeb.lexador.mapear(codigo, -1);
-    const retornoAvaliadorSintatico = pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
+    const retornoAvaliadorSintatico = await pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
     if (retornoAvaliadorSintatico.erros.length > 0) {
         return mapearErros(retornoAvaliadorSintatico.erros);
     }
