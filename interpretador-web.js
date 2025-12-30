@@ -10,9 +10,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InterpretadorWeb = void 0;
-const delegua_1 = require("@designliquido/delegua");
+const pitugues_1 = require("@designliquido/delegua/interpretador/dialetos/pitugues");
 const excecoes_1 = require("@designliquido/delegua/excecoes");
-class InterpretadorWeb extends delegua_1.Interpretador {
+class InterpretadorWeb extends pitugues_1.InterpretadorPitugues {
     constructor(diretorioBase, performance = false, funcaoDeRetorno = null, funcaoDeRetornoMesmaLinha = null) {
         super(diretorioBase, performance, funcaoDeRetorno, funcaoDeRetornoMesmaLinha);
     }
