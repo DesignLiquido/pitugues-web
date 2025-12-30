@@ -1,9 +1,10 @@
-import { Importar, ImportarComoConstruto, Interpretador, Literal, SimboloInterface } from "@designliquido/delegua";
+import { Importar, ImportarComoConstruto, Literal, SimboloInterface } from "@designliquido/delegua";
+import { InterpretadorPitugues } from "@designliquido/delegua/interpretador/dialetos/pitugues";
 import { DeleguaModulo } from "@designliquido/delegua/interpretador/estruturas";
 import { ErroEmTempoDeExecucao } from "@designliquido/delegua/excecoes";
 
 export class InterpretadorWeb 
-    extends Interpretador
+    extends InterpretadorPitugues
 {
     constructor(
         diretorioBase: string,
