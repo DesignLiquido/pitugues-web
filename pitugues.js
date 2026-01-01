@@ -17939,6 +17939,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.avaliar = avaliar;
+exports.visitarExpressaoReferenciaFuncao = visitarExpressaoReferenciaFuncao;
+exports.visitarExpressaoArgumentoReferenciaFuncao = visitarExpressaoArgumentoReferenciaFuncao;
 exports.visitarExpressaoDeChamada = visitarExpressaoDeChamada;
 exports.visitarDeclaracaoEnquanto = visitarDeclaracaoEnquanto;
 exports.visitarDeclaracaoEscreva = visitarDeclaracaoEscreva;
@@ -18029,6 +18031,12 @@ async function avaliar(interpretador, expressao) {
         }
     }
     return await expressao.aceitar(interpretador);
+}
+async function visitarExpressaoReferenciaFuncao(interpretador, visitarExpressaoReferenciaFuncaoAncestral, expressao) {
+    return await visitarExpressaoReferenciaFuncaoAncestral(expressao);
+}
+async function visitarExpressaoArgumentoReferenciaFuncao(interpretador, visitarExpressaoArgumentoReferenciaFuncaoAncestral, expressao) {
+    return await visitarExpressaoArgumentoReferenciaFuncaoAncestral(expressao);
 }
 async function visitarExpressaoDeChamada(interpretador, visitarExpressaoDeChamadaAncestral, expressao) {
     const _idChamadaComArgumentos = await gerarIdResolucaoChamada(interpretador, expressao);
@@ -18212,12 +18220,17 @@ async function visitarExpressaoRetornar(interpretador, visitarExpressaoRetornarA
     // Captura o escopo atual ANTES de avaliar a expressão,
     // pois a avaliação pode abrir novos escopos
     const escopoAtual = interpretador.pilhaEscoposExecucao.topoDaPilha();
+    const escoposAntes = interpretador.pilhaEscoposExecucao.elementos();
     const retorno = await visitarExpressaoRetornarAncestral(declaracao);
+    // Verifica se novos escopos foram criados durante a avaliação
+    const escoposDepois = interpretador.pilhaEscoposExecucao.elementos();
+    const novoEscopoFoiCriado = escoposDepois > escoposAntes;
     // Se o retorno é null ou RetornoQuebra com valor null (porque pausamos durante avaliação de expressão,
     // como ao entrar em uma função em modo adentrarEscopo), não marcar como finalizado ainda
     const valorRetorno = retorno && retorno.hasOwnProperty('valor') ? retorno.valor : retorno;
-    const novoEscopoFoiCriado = interpretador.pilhaEscoposExecucao.topoDaPilha() !== escopoAtual;
-    if (valorRetorno === null && interpretador.comando === 'adentrarEscopo' && novoEscopoFoiCriado) {
+    // Em modo adentrarEscopo, se um novo escopo foi criado (entramos em uma função aninhada),
+    // NÃO marcar o escopo atual como finalizado ainda
+    if (interpretador.comando === 'adentrarEscopo' && novoEscopoFoiCriado) {
         return retorno;
     }
     // O escopo atual é marcado como finalizado, para notificar a
@@ -18856,6 +18869,12 @@ class InterpretadorBaseComDepuracao extends interpretador_base_1.InterpretadorBa
         return await comum.visitarExpressaoBinaria(this, 
         // super.visitarExpressaoBinaria.bind(this),
         expressao);
+    }
+    async visitarExpressaoReferenciaFuncao(expressao) {
+        return await comum.visitarExpressaoReferenciaFuncao(this, super.visitarExpressaoReferenciaFuncao.bind(this), expressao);
+    }
+    async visitarExpressaoArgumentoReferenciaFuncao(expressao) {
+        return await comum.visitarExpressaoArgumentoReferenciaFuncao(this, super.visitarExpressaoArgumentoReferenciaFuncao.bind(this), expressao);
     }
     async visitarDeclaracaoEnquanto(declaracao) {
         return await comum.visitarDeclaracaoEnquanto(this, declaracao);
@@ -20583,11 +20602,9 @@ class InterpretadorBase {
         // Outros tipos de objetos (Date, classes customizadas, etc.)
         return objeto;
     }
-    visitarExpressaoArgumentoReferenciaFuncao(expressao) {
-        throw new Error('Método não implementado.');
-    }
-    visitarExpressaoReferenciaFuncao(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoArgumentoReferenciaFuncao(expressao) {
+        const deleguaFuncao = this.pilhaEscoposExecucao.obterVariavelPorNome(expressao.simboloFuncao.lexema);
+        return deleguaFuncao;
     }
     visitarExpressaoAcessoMetodo(expressao) {
         throw new Error('Método não implementado.');
@@ -20664,6 +20681,10 @@ class InterpretadorBase {
     }
     async visitarExpressaoFimPara(declaracao) {
         throw new Error('Método não implementado.');
+    }
+    async visitarExpressaoReferenciaFuncao(expressao) {
+        const deleguaFuncao = this.pilhaEscoposExecucao.obterReferenciaFuncao(expressao.idFuncao);
+        return deleguaFuncao;
     }
     /**
      * Chama o método `aceitar` de um construto ou declaração, passando o
@@ -21729,6 +21750,7 @@ class InterpretadorBase {
     visitarDeclaracaoDefinicaoFuncao(declaracao) {
         const funcao = new estruturas_1.DeleguaFuncao(declaracao.simbolo.lexema, declaracao.funcao);
         this.pilhaEscoposExecucao.definirVariavel(declaracao.simbolo.lexema, funcao);
+        this.pilhaEscoposExecucao.registrarReferenciaFuncao(declaracao.id, funcao);
         return Promise.resolve({
             declaracao: funcao,
         });
@@ -22986,10 +23008,6 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
     async visitarExpressaoAjuda(expressao) {
         return Promise.resolve((0, comum_1.pontoEntradaAjuda)(expressao.funcao, expressao.valor));
     }
-    async visitarExpressaoArgumentoReferenciaFuncao(expressao) {
-        const deleguaFuncao = this.pilhaEscoposExecucao.obterVariavelPorNome(expressao.simboloFuncao.lexema);
-        return deleguaFuncao;
-    }
     async visitarExpressaoAtribuicaoPorIndice(expressao) {
         const promises = await Promise.all([
             this.avaliar(expressao.objeto),
@@ -23155,10 +23173,6 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
     }
     visitarExpressaoParaCada(expressao) {
         return this.logicaComumExecucaoParaCada(expressao, true);
-    }
-    async visitarExpressaoReferenciaFuncao(expressao) {
-        const deleguaFuncao = this.pilhaEscoposExecucao.obterReferenciaFuncao(expressao.idFuncao);
-        return deleguaFuncao;
     }
     async visitarExpressaoRetornar(declaracao) {
         let valor = null;
@@ -44538,6 +44552,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TradutorMermaidJs = void 0;
+const construtos_1 = require("../construtos");
 const mermaid_1 = require("./mermaid");
 const delegua_1 = __importDefault(require("../tipos-de-simbolos/delegua"));
 /**
@@ -44630,7 +44645,7 @@ class TradutorMermaidJs {
     }
     async visitarDeclaracaoDeExpressao(declaracao) {
         // Verifica se é uma chamada de função
-        if (declaracao.expressao.constructor.name === 'Chamada') {
+        if (declaracao.expressao.constructor === construtos_1.Chamada) {
             const chamada = declaracao.expressao;
             const verticesChamada = await this.traduzirChamadaFuncao(declaracao, chamada);
             if (verticesChamada.length > 0) {
@@ -44821,7 +44836,9 @@ class TradutorMermaidJs {
         // Caminho então, normalmente um `Bloco`.
         const verticesEntao = await declaracao.caminhoEntao.aceitar(this);
         vertices = vertices.concat(verticesEntao);
-        const ultimaArestaEntao = verticesEntao[verticesEntao.length - 1].destino;
+        const ultimaArestaEntao = verticesEntao.length > 0
+            ? verticesEntao[verticesEntao.length - 1].destino
+            : aresta;
         if (declaracao.caminhoSenao) {
             this.anteriores = [];
             const arestaSenao = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.caminhoSenao.linha}(senão)`);
@@ -44847,8 +44864,80 @@ class TradutorMermaidJs {
         vertices.push(new mermaid_1.VerticeFluxograma(ultimaArestaCorpo, aresta));
         return Promise.resolve(vertices);
     }
-    visitarDeclaracaoTente(declaracao) {
-        throw new Error('Método não implementado.');
+    async visitarDeclaracaoTente(declaracao) {
+        const texto = `Linha${declaracao.linha}(tente)`;
+        const aresta = new mermaid_1.ArestaFluxograma(declaracao, texto);
+        let vertices = this.logicaComumConexaoArestas(aresta);
+        this.anteriores.push(aresta);
+        // Caminho tente (try)
+        const verticesTente = [];
+        for (const declaracaoTente of declaracao.caminhoTente) {
+            const verticesDeclaracao = await declaracaoTente.aceitar(this);
+            verticesTente.push(...verticesDeclaracao);
+        }
+        vertices = vertices.concat(verticesTente);
+        const ultimaArestaTente = verticesTente.length > 0
+            ? verticesTente[verticesTente.length - 1].destino
+            : aresta;
+        const anterioresAposTente = [];
+        // Caminho pegue (catch) - se existir
+        if (declaracao.caminhoPegue) {
+            this.anteriores = [aresta];
+            const arestaPegue = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.linha}Pegue(pegue)`);
+            vertices.push(new mermaid_1.VerticeFluxograma(aresta, arestaPegue, 'Erro'));
+            this.anteriores.push(arestaPegue);
+            const verticesPegue = [];
+            if (Array.isArray(declaracao.caminhoPegue)) {
+                for (const declaracaoPegue of declaracao.caminhoPegue) {
+                    const verticesDeclaracao = await declaracaoPegue.aceitar(this);
+                    verticesPegue.push(...verticesDeclaracao);
+                }
+            }
+            vertices = vertices.concat(verticesPegue);
+            const ultimaArestaPegue = verticesPegue.length > 0
+                ? verticesPegue[verticesPegue.length - 1].destino
+                : arestaPegue;
+            anterioresAposTente.push(ultimaArestaPegue);
+        }
+        // Caminho senão (else) - se existir
+        if (declaracao.caminhoSenao && declaracao.caminhoSenao.length > 0) {
+            this.anteriores = [ultimaArestaTente];
+            const arestaSenao = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.linha}Senao(senão - sem erro)`);
+            vertices.push(new mermaid_1.VerticeFluxograma(ultimaArestaTente, arestaSenao, 'Sucesso'));
+            this.anteriores.push(arestaSenao);
+            const verticesSenao = [];
+            for (const declaracaoSenao of declaracao.caminhoSenao) {
+                const verticesDeclaracao = await declaracaoSenao.aceitar(this);
+                verticesSenao.push(...verticesDeclaracao);
+            }
+            vertices = vertices.concat(verticesSenao);
+            const ultimaArestaSenao = verticesSenao.length > 0
+                ? verticesSenao[verticesSenao.length - 1].destino
+                : arestaSenao;
+            anterioresAposTente.push(ultimaArestaSenao);
+        }
+        else {
+            // Se não há senão, o caminho de sucesso também continua
+            anterioresAposTente.push(ultimaArestaTente);
+        }
+        // Caminho finalmente (finally) - se existir
+        if (declaracao.caminhoFinalmente && declaracao.caminhoFinalmente.length > 0) {
+            this.anteriores = anterioresAposTente;
+            const arestaFinalmente = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.linha}Finalmente(finalmente)`);
+            vertices = vertices.concat(this.logicaComumConexaoArestas(arestaFinalmente));
+            this.anteriores.push(arestaFinalmente);
+            const verticesFinalmente = [];
+            for (const declaracaoFinalmente of declaracao.caminhoFinalmente) {
+                const verticesDeclaracao = await declaracaoFinalmente.aceitar(this);
+                verticesFinalmente.push(...verticesDeclaracao);
+            }
+            vertices = vertices.concat(verticesFinalmente);
+        }
+        else {
+            // Se não há finalmente, os anteriores são os caminhos após tente
+            this.anteriores = anterioresAposTente;
+        }
+        return Promise.resolve(vertices);
     }
     visitarDeclaracaoTextoDocumentacao(declaracao) {
         throw new Error('Método não implementado.');
@@ -44891,11 +44980,15 @@ class TradutorMermaidJs {
     async visitarExpressaoAgrupamento(expressao) {
         return await expressao.expressao.aceitar(this);
     }
-    visitarExpressaoArgumentoReferenciaFuncao(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoArgumentoReferenciaFuncao(expressao) {
+        const nomeFuncao = expressao.simboloFuncao.lexema;
+        return Promise.resolve(`referência à função ${nomeFuncao}`);
     }
-    visitarExpressaoAtribuicaoPorIndice(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoAtribuicaoPorIndice(expressao) {
+        const textoObjeto = await expressao.objeto.aceitar(this);
+        const textoIndice = await expressao.indice.aceitar(this);
+        const textoValor = await expressao.valor.aceitar(this);
+        return Promise.resolve(`${textoObjeto} no índice ${textoIndice} recebe: ${textoValor}`);
     }
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao) {
         throw new Error('Método não implementado.');
@@ -44906,8 +44999,26 @@ class TradutorMermaidJs {
         switch (expressao.operador.tipo) {
             case delegua_1.default.ADICAO:
                 return Promise.resolve(`somar ${operandoEsquerdo} e ${operandoDireito}`);
+            case delegua_1.default.SUBTRACAO:
+                return Promise.resolve(`subtrair ${operandoDireito} de ${operandoEsquerdo}`);
+            case delegua_1.default.MULTIPLICACAO:
+                return Promise.resolve(`multiplicar ${operandoEsquerdo} por ${operandoDireito}`);
+            case delegua_1.default.DIVISAO:
+                return Promise.resolve(`dividir ${operandoEsquerdo} por ${operandoDireito}`);
+            case delegua_1.default.MODULO:
+                return Promise.resolve(`resto de ${operandoEsquerdo} dividido por ${operandoDireito}`);
             case delegua_1.default.MENOR:
                 return Promise.resolve(`${operandoEsquerdo} for menor que ${operandoDireito}`);
+            case delegua_1.default.MENOR_IGUAL:
+                return Promise.resolve(`${operandoEsquerdo} for menor ou igual a ${operandoDireito}`);
+            case delegua_1.default.MAIOR:
+                return Promise.resolve(`${operandoEsquerdo} for maior que ${operandoDireito}`);
+            case delegua_1.default.MAIOR_IGUAL:
+                return Promise.resolve(`${operandoEsquerdo} for maior ou igual a ${operandoDireito}`);
+            case delegua_1.default.IGUAL_IGUAL:
+                return Promise.resolve(`${operandoEsquerdo} for igual a ${operandoDireito}`);
+            case delegua_1.default.DIFERENTE:
+                return Promise.resolve(`${operandoEsquerdo} for diferente de ${operandoDireito}`);
         }
         return Promise.resolve('');
     }
@@ -44922,8 +45033,12 @@ class TradutorMermaidJs {
     async visitarExpressaoComentario(expressao) {
         return Promise.resolve('');
     }
-    visitarExpressaoContinua(declaracao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoContinua(declaracao) {
+        const texto = `Linha${declaracao.linha}(continua)`;
+        const aresta = new mermaid_1.ArestaFluxograma(declaracao, texto);
+        const vertices = this.logicaComumConexaoArestas(aresta);
+        this.anteriores.push(aresta);
+        return Promise.resolve(vertices);
     }
     async visitarExpressaoDeChamada(expressao) {
         const textoEntidadeChamada = await expressao.entidadeChamada.aceitar(this);
@@ -44946,8 +45061,16 @@ class TradutorMermaidJs {
         const textoValor = await expressao.valor.aceitar(this);
         return Promise.resolve(`${expressao.nome.lexema} em ${textoObjeto} recebe ${textoValor}`);
     }
-    visitarExpressaoFuncaoConstruto(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoFuncaoConstruto(expressao) {
+        let texto = 'função anônima';
+        if (expressao.parametros && expressao.parametros.length > 0) {
+            const parametros = expressao.parametros.map(p => p.nome.lexema).join(', ');
+            texto += `(${parametros})`;
+        }
+        else {
+            texto += '()';
+        }
+        return Promise.resolve(texto);
     }
     async visitarExpressaoDeVariavel(expressao) {
         return Promise.resolve(expressao.simbolo.lexema);
@@ -44965,17 +45088,41 @@ class TradutorMermaidJs {
         }
         return Promise.resolve(texto);
     }
-    visitarExpressaoExpressaoRegular(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoExpressaoRegular(expressao) {
+        // Representa a expressão regular como texto para o fluxograma
+        const padraoRegex = expressao.valor ? String(expressao.valor) : expressao.simbolo.lexema;
+        return Promise.resolve(`expressão regular: /${padraoRegex}/`);
     }
-    visitarExpressaoFalhar(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoFalhar(expressao) {
+        let texto = `Linha${expressao.linha}(falhar`;
+        if (expressao.explicacao) {
+            const textoExplicacao = await expressao.explicacao.aceitar(this);
+            texto += `: ${textoExplicacao}`;
+        }
+        texto += ')';
+        const aresta = new mermaid_1.ArestaFluxograma(expressao, texto);
+        const vertices = this.logicaComumConexaoArestas(aresta);
+        this.anteriores.push(aresta);
+        return Promise.resolve(vertices);
     }
     visitarExpressaoFimPara(declaracao) {
         throw new Error('Método não implementado.');
     }
-    visitarExpressaoFormatacaoEscrita(declaracao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoFormatacaoEscrita(declaracao) {
+        const textoExpressao = await declaracao.expressao.aceitar(this);
+        let formato = textoExpressao;
+        // Adiciona informações de formatação se especificadas
+        const partes = [textoExpressao];
+        if (declaracao.espacos > 0) {
+            partes.push(`${declaracao.espacos} espaços`);
+        }
+        if (declaracao.casasDecimais > 0) {
+            partes.push(`${declaracao.casasDecimais} casas decimais`);
+        }
+        if (partes.length > 1) {
+            formato = `${partes[0]} (${partes.slice(1).join(', ')})`;
+        }
+        return Promise.resolve(formato);
     }
     async visitarExpressaoIsto(expressao) {
         return Promise.resolve('this');
@@ -44998,11 +45145,20 @@ class TradutorMermaidJs {
                 return Promise.resolve(String(expressao.valor));
         }
     }
-    visitarExpressaoLogica(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoLogica(expressao) {
+        const operandoEsquerdo = await expressao.esquerda.aceitar(this);
+        const operandoDireito = await expressao.direita.aceitar(this);
+        switch (expressao.operador.tipo) {
+            case delegua_1.default.E:
+                return Promise.resolve(`${operandoEsquerdo} e ${operandoDireito}`);
+            case delegua_1.default.OU:
+                return Promise.resolve(`${operandoEsquerdo} ou ${operandoDireito}`);
+        }
+        return Promise.resolve('');
     }
-    visitarExpressaoReferenciaFuncao(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoReferenciaFuncao(expressao) {
+        const nomeFuncao = expressao.simboloFuncao.lexema;
+        return Promise.resolve(`@${nomeFuncao}`);
     }
     async visitarExpressaoRetornar(expressao) {
         let texto = `Linha${expressao.linha}(retorna`;
@@ -45018,17 +45174,31 @@ class TradutorMermaidJs {
     async visitarExpressaoSeparador(expressao) {
         return Promise.resolve(`${expressao.conteudo} `);
     }
-    visitarExpressaoSuper(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoSuper(expressao) {
+        return Promise.resolve('super');
     }
-    visitarExpressaoSustar(declaracao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoSustar(declaracao) {
+        const texto = `Linha${declaracao.linha}(sustar)`;
+        const aresta = new mermaid_1.ArestaFluxograma(declaracao, texto);
+        const vertices = this.logicaComumConexaoArestas(aresta);
+        this.anteriores.push(aresta);
+        return Promise.resolve(vertices);
     }
-    visitarExpressaoTupla(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoTupla(expressao) {
+        // Tupla base pode ter um único valor
+        if (expressao.valor !== undefined) {
+            return Promise.resolve(`tupla(${expressao.valor})`);
+        }
+        // Se não houver valor, tupla vazia
+        return Promise.resolve('tupla()');
     }
-    visitarExpressaoTuplaN(expressao) {
-        throw new Error('Método não implementado.');
+    async visitarExpressaoTuplaN(expressao) {
+        const valores = [];
+        for (const elemento of expressao.elementos) {
+            const valorTraduzido = await elemento.aceitar(this);
+            valores.push(valorTraduzido);
+        }
+        return Promise.resolve(`tupla(${valores.join(', ')})`);
     }
     visitarExpressaoTipoDe(expressao) {
         throw new Error('Método não implementado.');
@@ -45064,7 +45234,7 @@ class TradutorMermaidJs {
      */
     async traduzirChamadaFuncao(declaracaoExpressao, chamada) {
         // Verifica se é uma chamada a uma função conhecida
-        if (chamada.entidadeChamada.constructor.name === 'Variavel') {
+        if (chamada.entidadeChamada.constructor === construtos_1.Variavel) {
             const variavel = chamada.entidadeChamada;
             const nomeFuncao = variavel.simbolo.lexema;
             if (this.declaracoesFuncoes[nomeFuncao]) {
@@ -45191,7 +45361,7 @@ class TradutorMermaidJs {
 }
 exports.TradutorMermaidJs = TradutorMermaidJs;
 
-},{"../tipos-de-simbolos/delegua":247,"./mermaid":257}],271:[function(require,module,exports){
+},{"../construtos":100,"../tipos-de-simbolos/delegua":247,"./mermaid":257}],271:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TradutorPortugolIpt = void 0;
