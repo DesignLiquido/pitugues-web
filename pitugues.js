@@ -6640,6 +6640,9 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         this.pilhaEscopos.definirInformacoesVariavel('inteiro', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('inteiro', 'inteiro', true, [
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
         ]));
+        this.pilhaEscopos.definirInformacoesVariavel('longo', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('longo', 'longo', true, [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
+        ]));
         this.pilhaEscopos.definirInformacoesVariavel('intervalo', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('intervalo', 'inteiro[]', true, [
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valorInicial', 'qualquer'),
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valorFinal', 'qualquer'),
@@ -7982,13 +7985,17 @@ class AvaliadorSintaticoPitugues {
             case pitugues_2.default.INTERPOLACAO:
                 const simboloInterpolacao = this.avancarEDevolverAnterior();
                 const conteudoOriginal = simboloInterpolacao.literal;
-                // Transforma "Olá {nome}" em '"Olá " + (nome) + ""'
-                // Adicionado parênteses em volta das variáveis para garantir precedência na soma
-                const codigoTransformado = '"' +
-                    conteudoOriginal
-                        .replace(/\{/g, '" + (')
-                        .replace(/\}/g, ') + "') +
-                    '"';
+                const codigoTransformado = '"' + conteudoOriginal.replace(/\{(.*?)\}/g, (_, miolo) => {
+                    // 'miolo' é o texto que estava dentro das chaves. Ex: "valor" ou "valor:.2f"
+                    if (miolo.includes(':')) {
+                        const [variavel, formato] = miolo.split(':').map(s => s.trim());
+                        if (variavel !== "") {
+                            // Transforma {valor:.2f} em "{:.2f}".formatar(valor)
+                            return '" + "{:' + formato + '}".formatar(' + variavel + ') + "';
+                        }
+                    }
+                    return '" + (' + miolo.trim() + ') + "';
+                }) + '"';
                 const microLexador = new micro_lexador_pitugues_1.MicroLexadorPitugues();
                 const retornoMicroLexador = microLexador.mapear(codigoTransformado);
                 const microAvaliadorSintatico = new micro_avaliador_sintatico_pitugues_1.MicroAvaliadorSintaticoPitugues();
@@ -8898,6 +8905,9 @@ class AvaliadorSintaticoPitugues {
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
         ]));
         this.pilhaEscopos.definirInformacoesVariavel('inteiro', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('inteiro', 'inteiro', true, [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
+        ]));
+        this.pilhaEscopos.definirInformacoesVariavel('longo', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('longo', 'longo', true, [
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
         ]));
         this.pilhaEscopos.definirInformacoesVariavel('intervalo', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('intervalo', 'inteiro[]', true, [
@@ -11727,6 +11737,7 @@ exports.encontrarUltimoIndice = encontrarUltimoIndice;
 exports.filtrarPor = filtrarPor;
 exports.incluido = incluido;
 exports.inteiro = inteiro;
+exports.longo = longo;
 exports.intervalo = intervalo;
 exports.mapear = mapear;
 exports.maximo = maximo;
@@ -12207,6 +12218,45 @@ async function inteiro(interpretador, valorParaConverter) {
         : valorParaConverter;
     const resultadoValidacao = validacaoComumNumeros(interpretador, valor);
     return resultadoValidacao || Promise.resolve(parseInt(valor));
+}
+/**
+ * Converte um valor em um número longo (BigInt).
+ * @param {InterpretadorInterface} interpretador A instância do interpretador.
+ * @param {VariavelInterface | any} valorParaConverter O valor a ser convertido.
+ * @returns {Promise<any>} Uma Promise com o resultado da conversão para BigInt.
+ */
+async function longo(interpretador, valorParaConverter) {
+    if (valorParaConverter === null || valorParaConverter === undefined) {
+        return Promise.resolve(BigInt(0));
+    }
+    const valor = valorParaConverter.hasOwnProperty('valor')
+        ? valorParaConverter.valor
+        : valorParaConverter;
+    // Se já é BigInt, retorna direto
+    if (typeof valor === 'bigint') {
+        return Promise.resolve(valor);
+    }
+    // Se é número, converte para BigInt (trunca decimais)
+    if (typeof valor === 'number') {
+        return Promise.resolve(BigInt(Math.floor(valor)));
+    }
+    // Para strings, remove parte decimal se presente
+    const strValue = String(valor).trim();
+    // Trata string vazia
+    if (!strValue || strValue === '') {
+        return Promise.resolve(BigInt(0));
+    }
+    // Remove parte decimal da string (ex: "3.14" -> "3")
+    const integerPart = strValue.split('.')[0];
+    try {
+        return Promise.resolve(BigInt(integerPart));
+    }
+    catch (e) {
+        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
+            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
+            linha: interpretador.linhaDeclaracaoAtual,
+        }, `Não foi possível converter '${valor}' para longo. O valor deve ser um número ou texto numérico.`));
+    }
 }
 /**
  * Cria um vetor com números inteiros no intervalo especificado.
@@ -12881,6 +12931,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", { value: true });
 const informacao_elemento_sintatico_1 = require("../../../informacao-elemento-sintatico");
 const primitivas_texto_1 = require("../../primitivas-texto");
+const excecoes_1 = require("../../../excecoes");
 exports.default = {
     aparar: {
         tipoRetorno: 'texto',
@@ -13036,6 +13087,31 @@ exports.default = {
             't.fatiar(8) // "três quatro", ou seja, seleciona tudo da posição 8 até o final do texto.\n```' +
             '\n\n ### Formas de uso \n',
         exemploCodigo: 'texto.fatiar(início, final)\n' + 'texto.fatiar(aPartirDaPosicao)',
+    },
+    formatar: {
+        tipoRetorno: 'texto',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], 'O elemento a ser formatado.'),
+        ],
+        implementacao: (interpretador, mascara, elemento) => {
+            const valor = interpretador.resolverValor(elemento);
+            const matchMascara = mascara.match(/\{:(.*?)\}/);
+            if (matchMascara) {
+                const configuracao = matchMascara[1];
+                if (configuracao.includes('f') && typeof valor !== 'number') {
+                    return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `Erro: Código de formato 'f' desconhecido para objeto do tipo '${typeof valor === 'string' ? 'texto' : typeof valor}'`, interpretador.linhaDeclaracaoAtual));
+                }
+                if (typeof valor === 'number') {
+                    const matchCasas = configuracao.match(/\.(\d+)f/);
+                    const casas = matchCasas ? parseInt(matchCasas[1]) : 2;
+                    return Promise.resolve(mascara.replace(matchMascara[0], valor.toFixed(casas)));
+                }
+            }
+            return Promise.resolve(mascara.replace(/\{.*?\}/, String(valor)));
+        },
+        assinaturaFormato: 'texto.formatar(elemento: qualquer)',
+        documentacao: '# `texto.formatar(valor)` \n\n Formata um valor com base na máscara de texto.',
+        exemploCodigo: '"{:.2f}".formatar(1.2345)',
     },
     inclui: {
         tipoRetorno: 'lógico',
@@ -13210,7 +13286,7 @@ exports.default = {
     },
 };
 
-},{"../../../informacao-elemento-sintatico":164,"../../primitivas-texto":69}],65:[function(require,module,exports){
+},{"../../../excecoes":161,"../../../informacao-elemento-sintatico":164,"../../primitivas-texto":69}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const excecoes_1 = require("../../../excecoes");
@@ -13240,6 +13316,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const informacao_elemento_sintatico_1 = require("../../../informacao-elemento-sintatico");
 const inferenciador_1 = require("../../../inferenciador");
 const construtos_1 = require("../../../construtos");
+const excecoes_1 = require("../../../excecoes");
 exports.default = {
     adicionar: {
         tipoRetorno: 'qualquer[]',
@@ -13278,6 +13355,27 @@ exports.default = {
             '\n\n ### Formas de uso  \n',
         exemploCodigo: 'vetor.concatenar(...argumentos)',
     },
+    contar: {
+        tipoRetorno: 'numero',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], 'O elemento a ser contado no vetor.'),
+        ],
+        implementacao: (interpretador, vetor, ...args) => {
+            if (args.length === 0) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `A função "contar" espera um argumento.`, interpretador.linhaDeclaracaoAtual));
+            }
+            if (args.length > 1) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `A função "contar" espera apenas um argumento.`, interpretador.linhaDeclaracaoAtual));
+            }
+            const elemento = args[0];
+            const valorProcurado = interpretador.resolverValor(elemento);
+            const total = vetor.filter(item => interpretador.resolverValor(item) === valorProcurado).length;
+            return Promise.resolve(total);
+        },
+        assinaturaFormato: 'vetor.contar(elemento)',
+        documentacao: '# `vetor.contar(elemento)`\n\nRetorna quantas vezes o elemento aparece no vetor.',
+        exemploCodigo: 'vetor.contar(elemento)',
+    },
     empilhar: {
         tipoRetorno: 'qualquer[]',
         argumentos: [new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], '')],
@@ -13297,46 +13395,35 @@ exports.default = {
             '\n\n ### Formas de uso \n',
         exemploCodigo: 'vetor.empilhar(elemento)',
     },
-    encaixar: {
+    estender: {
         tipoRetorno: 'qualquer[]',
         argumentos: [
-            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('inicio', 'inteiro'),
-            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('excluirQuantidade', 'número'),
-            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('itens', 'qualquer[]'),
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('outrosVetores', 'qualquer[]', true, [], 'Um ou mais vetores (ou dicionários) cujos elementos serão adicionados ao final deste vetor.'),
         ],
-        implementacao: (interpretador, vetor, posicaoInicial, quantidadeExclusao, ...itens) => {
-            let elementos = [];
-            if (quantidadeExclusao || quantidadeExclusao === 0) {
-                elementos = !itens.length
-                    ? vetor.splice(posicaoInicial, quantidadeExclusao)
-                    : vetor.splice(posicaoInicial, quantidadeExclusao, ...itens);
-                return Promise.resolve(elementos);
+        implementacao: (interpretador, vetor, ...iteraveis) => {
+            if (iteraveis.length === 0) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, 'A função "estender" espera pelo menos um argumento (vetor ou dicionário).', interpretador.linhaDeclaracaoAtual));
             }
-            else {
-                elementos = !itens.length ? vetor.splice(posicaoInicial) : vetor.splice(posicaoInicial, ...itens);
-                return Promise.resolve(vetor);
+            for (const argumento of iteraveis) {
+                const itemResolvido = interpretador.resolverValor(argumento);
+                // É um vetor
+                if (Array.isArray(itemResolvido)) {
+                    vetor.push(...itemResolvido);
+                    continue;
+                }
+                // É um dicionário
+                if (typeof itemResolvido === 'object' && itemResolvido !== null) {
+                    vetor.push(...Object.keys(itemResolvido));
+                    continue;
+                }
+                // Não é iterável
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, 'O argumento da função "estender" deve ser um vetor ou um dicionário.', interpretador.linhaDeclaracaoAtual));
             }
+            return Promise.resolve(vetor);
         },
-        assinaturaFormato: 'vetor.encaixar(posicaoInicial?: número, quantidadeExclusao?: número, itens?: qualquer[])',
-        documentacao: '# `vetor.encaixar(posicaoInicial, quantidadeExclusao, itens)` \n \n' +
-            'Encaixa um vetor em outro, dadas posições de início e quantidade de ítens a serem excluídos do vetor original. \n' +
-            '\n\n ## Exemplo de Código\n' +
-            '\n\n```pitugues\nvar v = [1, 2, 3, 4, 5]\n' +
-            'escreva(v.encaixar()) // "[1, 2, 3, 4, 5]", ou seja, não faz coisa alguma.\n' +
-            `var v1 = v.encaixar(2)\n` +
-            'escreva(v) // "[3, 4, 5]", ou seja, a posição 2, onde fica o 3, passa a ser a nova posição inicial do vetor.\n' +
-            'escreva(v1) // "[1, 2]", ou seja, o retorno de `encaixar()` são as posições removidas do vetor original.\n' +
-            'var v2 = [1, 2, 3, 4, 5]\n' +
-            'escreva(v2.encaixar(2, 1)) // "[3]"\n' +
-            'escreva(v2) // "[1, 2, 4, 5]"\n```' +
-            'var v3 = [1, 2, 3, 4, 5]\n' +
-            'escreva(v3.encaixar(2, 1, "teste")) // "[3]"\n' +
-            'escreva(v3) // "[1, 2, "teste", 4, 5]"\n```' +
-            '\n\n ### Formas de uso \n' +
-            '`encaixar` suporta sobrecarga do método.\n\n',
-        exemploCodigo: 'vetor.encaixar(<nova posição inicial>)\n' +
-            'vetor.encaixar(<a partir desta posição>, <exclua esta quantidade de elementos>)\n' +
-            'vetor.encaixar(<a partir desta posição>, <exclua esta quantidade de elementos>, <adicione estes elementos>)',
+        assinaturaFormato: 'vetor.estender(...iteravel: qualquer[])',
+        documentacao: '# `vetor.estender(iteravel)`\n\nAdiciona elementos de um vetor ou chaves de um dicionário ao final do vetor atual.',
+        exemploCodigo: 'vetor.estender([1, 2])',
     },
     fatiar: {
         tipoRetorno: 'qualquer[]',
@@ -13403,6 +13490,65 @@ exports.default = {
             '\n\n ### Formas de uso \n',
         exemploCodigo: 'vetor.inclui(elemento)'
     },
+    indice: {
+        tipoRetorno: 'numero',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], 'O elemento cuja posição (índice) será buscada no vetor.'),
+        ],
+        implementacao: (interpretador, vetor, elemento) => {
+            if (elemento === undefined) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, '', interpretador.linhaDeclaracaoAtual));
+            }
+            if (elemento === 'nulo')
+                return Promise.reject(-1);
+            const valorProcurado = interpretador.resolverValor(elemento);
+            const index = vetor.findIndex(item => interpretador.resolverValor(item) === valorProcurado);
+            return Promise.resolve(index);
+        },
+        assinaturaFormato: 'vetor.indice(elemento: qualquer)',
+        documentacao: '# `vetor.indice(elemento)` \n \n' +
+            'Retorna a posição (índice) da primeira ocorrência do elemento no vetor. \n' +
+            'Caso o elemento não seja encontrado, devolve `-1`.\n' +
+            '\n\n ## Exemplo de Código\n' +
+            '\n\n```pitugues\n' +
+            'var v = ["maçã", "banana", "uva"]\n' +
+            'escreva(v.indice("banana")) // 1\n' +
+            'escreva(v.indice("abacaxi")) // -1\n' +
+            '```',
+        exemploCodigo: 'vetor.indice(elemento)'
+    },
+    inserir: {
+        tipoRetorno: 'qualquer[]',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('índice', 'inteiro', true, [], 'O índice onde o elemento será inserido.'),
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], 'O elemento a ser inserido.')
+        ],
+        implementacao: (interpretador, vetor, ...args) => {
+            if (args.length !== 2) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `A função "inserir" espera exatamente 2 argumentos (índice e elemento), mas recebeu ${args.length}.`, interpretador.linhaDeclaracaoAtual));
+            }
+            const idx = interpretador.resolverValor(args[0]);
+            const item = interpretador.resolverValor(args[1]);
+            if (typeof idx !== 'number') {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, 'O primeiro argumento da função "inserir" (índice) deve ser um número.', interpretador.linhaDeclaracaoAtual));
+            }
+            if (idx < 0 || idx > vetor.length) {
+                return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `Índice ${idx} fora dos limites do vetor. O tamanho atual é ${vetor.length}.`, interpretador.linhaDeclaracaoAtual));
+            }
+            vetor.splice(idx, 0, item);
+            return Promise.resolve(vetor);
+        },
+        assinaturaFormato: 'vetor.inserir(indice: numero, elemento: qualquer)',
+        documentacao: '# `vetor.inserir(indice, elemento)` \n \n' +
+            'Insere um elemento em uma posição específica do vetor, deslocando os elementos existentes para a direita. \n' +
+            '\n\n ## Exemplo de Código\n' +
+            '\n\n```pitugues\n' +
+            'v = [1, 2, 4, 5]\n' +
+            'v.inserir(2, 3) \n' +
+            'escreva(v) // "[1, 2, 3, 4, 5]"\n' +
+            '```',
+        exemploCodigo: 'vetor.inserir(indice, elemento)'
+    },
     inverter: {
         tipoRetorno: 'qualquer[]',
         argumentos: [],
@@ -13431,6 +13577,17 @@ exports.default = {
             '\n\n ### Formas de uso \n',
         exemploCodigo: 'vetor.juntar()\n' +
             'vetor.juntar(<separador>)',
+    },
+    limpar: {
+        tipoRetorno: 'qualquer[]',
+        argumentos: [],
+        implementacao: async (interpretador, vetor) => {
+            vetor.splice(0, vetor.length);
+            return Promise.resolve();
+        },
+        assinaturaFormato: 'vetor.limpar()',
+        documentacao: '# `vetor.limpar()`\n\nRemove todos os elementos do vetor original, deixando-o vazio.',
+        exemploCodigo: 'vetor.limpar()',
     },
     mapear: {
         tipoRetorno: 'qualquer[]',
@@ -13604,7 +13761,7 @@ exports.default = {
     },
 };
 
-},{"../../../construtos":100,"../../../inferenciador":163,"../../../informacao-elemento-sintatico":164}],67:[function(require,module,exports){
+},{"../../../construtos":100,"../../../excecoes":161,"../../../inferenciador":163,"../../../informacao-elemento-sintatico":164}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const construtos_1 = require("../construtos");
@@ -15808,7 +15965,7 @@ class Deceto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()}, ${this.decimo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()}, ${this.decimo.paraTextoSaida()})`;
     }
 }
 exports.Deceto = Deceto;
@@ -15830,7 +15987,7 @@ class Dupla extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()})`;
     }
 }
 exports.Dupla = Dupla;
@@ -15940,7 +16097,7 @@ class Noneto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()})`;
     }
 }
 exports.Noneto = Noneto;
@@ -15980,7 +16137,7 @@ class Octeto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()})`;
     }
 }
 exports.Octeto = Octeto;
@@ -16006,7 +16163,7 @@ class Quarteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()})`;
     }
 }
 exports.Quarteto = Quarteto;
@@ -16034,7 +16191,7 @@ class Quinteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, , ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, , ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()})`;
     }
 }
 exports.Quinteto = Quinteto;
@@ -16072,7 +16229,7 @@ class Septeto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()})`;
     }
 }
 exports.Septeto = Septeto;
@@ -16102,7 +16259,7 @@ class Sexteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()})`;
     }
 }
 exports.Sexteto = Sexteto;
@@ -16126,7 +16283,7 @@ class Trio extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()})`;
     }
 }
 exports.Trio = Trio;
@@ -17135,6 +17292,7 @@ function inferirTipoVariavel(variavel) {
         case 'Number':
         case 'number':
             return 'número';
+        case 'BigInt':
         case 'bigint':
             return 'longo';
         case 'Boolean':
@@ -17451,6 +17609,7 @@ function carregarBibliotecasGlobais(pilhaEscoposExecucao) {
     pilhaEscoposExecucao.definirVariavel('filtrarPor', new funcao_padrao_1.FuncaoPadrao(2, bibliotecaGlobal.filtrarPor));
     pilhaEscoposExecucao.definirVariavel('incluido', new funcao_padrao_1.FuncaoPadrao(2, bibliotecaGlobal.incluido));
     pilhaEscoposExecucao.definirVariavel('inteiro', new funcao_padrao_1.FuncaoPadrao(1, bibliotecaGlobal.inteiro));
+    pilhaEscoposExecucao.definirVariavel('longo', new funcao_padrao_1.FuncaoPadrao(1, bibliotecaGlobal.longo));
     pilhaEscoposExecucao.definirVariavel('intervalo', new funcao_padrao_1.FuncaoPadrao(2, bibliotecaGlobal.intervalo));
     pilhaEscoposExecucao.definirVariavel('mapear', new funcao_padrao_1.FuncaoPadrao(2, bibliotecaGlobal.mapear));
     pilhaEscoposExecucao.definirVariavel('maximo', new funcao_padrao_1.FuncaoPadrao(1, bibliotecaGlobal.maximo));
@@ -20488,6 +20647,7 @@ class InterpretadorBase {
         this.regexInterpolacao = /\${(.*?)}/g;
         this.tiposNumericos = [
             delegua_2.default.INTEIRO,
+            delegua_2.default.LONGO,
             delegua_2.default.NUMERO,
             delegua_2.default.NÚMERO,
             delegua_2.default.REAL,
@@ -20818,7 +20978,11 @@ class InterpretadorBase {
             case delegua_1.default.NEGACAO:
                 return !this.eVerdadeiro(valor);
             case delegua_1.default.BIT_NOT:
-                return ~valor;
+                // Mantém BigInt como BigInt, converte outros para Number
+                if (typeof valor === 'bigint') {
+                    return ~valor;
+                }
+                return ~Number(valor);
             // Para incrementar e decrementar, primeiro precisamos saber se o operador
             // veio antes do literal ou variável.
             // Se veio antes e o operando é uma variável, precisamos incrementar/decrementar,
@@ -20887,6 +21051,13 @@ class InterpretadorBase {
             return true;
         if (esquerda === null)
             return false;
+        // Handle BigInt/Number comparison
+        if (typeof esquerda === 'bigint' && typeof direita === 'number') {
+            return esquerda == BigInt(direita);
+        }
+        if (typeof esquerda === 'number' && typeof direita === 'bigint') {
+            return BigInt(esquerda) == direita;
+        }
         return esquerda === direita;
     }
     /**
@@ -20902,12 +21073,16 @@ class InterpretadorBase {
             ? direita.tipo
             : typeof direita === primitivos_1.default.NUMERO
                 ? delegua_2.default.NUMERO
-                : String(NaN);
+                : typeof direita === 'bigint'
+                    ? delegua_2.default.LONGO
+                    : String(NaN);
         const tipoEsquerda = esquerda.tipo
             ? esquerda.tipo
             : typeof esquerda === primitivos_1.default.NUMERO
                 ? delegua_2.default.NUMERO
-                : String(NaN);
+                : typeof esquerda === 'bigint'
+                    ? delegua_2.default.LONGO
+                    : String(NaN);
         if (this.tiposNumericos.includes(tipoDireita) && this.tiposNumericos.includes(tipoEsquerda))
             return;
         if (this.tiposNumericos.includes(tipoEsquerda) && tipoDireita === 'qualquer')
@@ -20937,35 +21112,53 @@ class InterpretadorBase {
         switch (expressao.operador.tipo) {
             case delegua_1.default.EXPONENCIACAO:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq ** dir;
+                }
                 const resultadoExponenciacao = Math.pow(valorEsquerdo, valorDireito);
                 return resultadoExponenciacao;
             case delegua_1.default.MAIOR:
                 if (this.tiposNumericos.includes(tipoEsquerdo) &&
                     this.tiposNumericos.includes(tipoDireito)) {
-                    return Number(valorEsquerdo) > Number(valorDireito);
+                    return valorEsquerdo > valorDireito;
                 }
                 return String(valorEsquerdo) > String(valorDireito);
             case delegua_1.default.MAIOR_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
-                return Number(valorEsquerdo) >= Number(valorDireito);
+                return valorEsquerdo >= valorDireito;
             case delegua_1.default.MENOR:
                 if (this.tiposNumericos.includes(tipoEsquerdo) &&
                     this.tiposNumericos.includes(tipoDireito)) {
-                    return Number(valorEsquerdo) < Number(valorDireito);
+                    return valorEsquerdo < valorDireito;
                 }
                 return String(valorEsquerdo) < String(valorDireito);
             case delegua_1.default.MENOR_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
-                return Number(valorEsquerdo) <= Number(valorDireito);
+                return valorEsquerdo <= valorDireito;
             case delegua_1.default.SUBTRACAO:
             case delegua_1.default.MENOS_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq - dir;
+                }
                 return Number(valorEsquerdo) - Number(valorDireito);
             case delegua_1.default.ADICAO:
             case delegua_1.default.MAIS_IGUAL:
                 // Se ambos os operandos são vetores, concatená-los
                 if (Array.isArray(valorEsquerdo) && Array.isArray(valorDireito)) {
                     return valorEsquerdo.concat(valorDireito);
+                }
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq + dir;
                 }
                 if (this.tiposNumericos.includes(tipoEsquerdo) &&
                     this.tiposNumericos.includes(tipoDireito)) {
@@ -20980,13 +21173,29 @@ class InterpretadorBase {
             case delegua_1.default.DIVISAO:
             case delegua_1.default.DIVISAO_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // SEMPRE retorna Number para precisão decimal (preferência do usuário)
+                // Mesmo se operandos forem BigInt, converte para Number
                 return Number(valorEsquerdo) / Number(valorDireito);
             case delegua_1.default.DIVISAO_INTEIRA:
             case delegua_1.default.DIVISAO_INTEIRA_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Retorna BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq / dir; // Trunca automaticamente
+                }
                 return Math.floor(Number(valorEsquerdo) / Number(valorDireito));
             case delegua_1.default.MULTIPLICACAO:
             case delegua_1.default.MULTIPLICACAO_IGUAL:
+                // Auto-promove para BigInt se qualquer operando for BigInt (e não for texto)
+                if ((typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') &&
+                    tipoEsquerdo !== delegua_2.default.TEXTO &&
+                    tipoDireito !== delegua_2.default.TEXTO) {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq * dir;
+                }
                 if (tipoEsquerdo === delegua_2.default.TEXTO ||
                     tipoDireito === delegua_2.default.TEXTO) {
                     // Sem ambos os valores resolvem como texto, multiplica normal.
@@ -21026,18 +21235,48 @@ class InterpretadorBase {
                 return Number(valorEsquerdo) % Number(valorDireito);
             case delegua_1.default.BIT_AND:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq & dir;
+                }
                 return Number(valorEsquerdo) & Number(valorDireito);
             case delegua_1.default.BIT_XOR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq ^ dir;
+                }
                 return Number(valorEsquerdo) ^ Number(valorDireito);
             case delegua_1.default.BIT_OR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq | dir;
+                }
                 return Number(valorEsquerdo) | Number(valorDireito);
             case delegua_1.default.MENOR_MENOR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq << dir;
+                }
                 return Number(valorEsquerdo) << Number(valorDireito);
             case delegua_1.default.MAIOR_MAIOR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
+                // Auto-promove para BigInt se qualquer operando for BigInt
+                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
+                    const esq = typeof valorEsquerdo === 'bigint' ? valorEsquerdo : BigInt(Math.floor(Number(valorEsquerdo)));
+                    const dir = typeof valorDireito === 'bigint' ? valorDireito : BigInt(Math.floor(Number(valorDireito)));
+                    return esq >> dir;
+                }
                 return Number(valorEsquerdo) >> Number(valorDireito);
             case delegua_1.default.DIFERENTE:
                 return !this.eIgual(valorEsquerdo, valorDireito);
@@ -23472,6 +23711,15 @@ class PilhaEscoposExecucao {
         switch (tipo) {
             case 'inteiro':
                 return parseInt(valor);
+            case 'longo':
+                // Converte para BigInt
+                if (typeof valor === 'bigint')
+                    return valor;
+                if (typeof valor === 'number')
+                    return BigInt(Math.floor(valor));
+                // Para strings, remove parte decimal antes de converter
+                const strValue = String(valor).split('.')[0].trim();
+                return BigInt(strValue || '0');
             case 'logico':
             case 'lógico':
                 return Boolean(valor);
@@ -26330,6 +26578,26 @@ class LexadorBase {
         return this.eDigito(caractere) || this.eAlfabeto(caractere);
     }
     /**
+     * Verifica se o caractere é um dígito hexadecimal (0-9, a-f, A-F).
+     */
+    eHexDigito(caractere) {
+        return ((caractere >= '0' && caractere <= '9') ||
+            (caractere >= 'a' && caractere <= 'f') ||
+            (caractere >= 'A' && caractere <= 'F'));
+    }
+    /**
+     * Verifica se o caractere é um dígito binário (0 ou 1).
+     */
+    eBinarioDigito(caractere) {
+        return caractere === '0' || caractere === '1';
+    }
+    /**
+     * Verifica se o caractere é um dígito octal (0-7).
+     */
+    eOctalDigito(caractere) {
+        return caractere >= '0' && caractere <= '7';
+    }
+    /**
      * Indica se o código está na última linha.
      * @returns Verdadeiro se contador de linhas está na última linha.
      *          Falso caso contrário.
@@ -26448,6 +26716,17 @@ class Lexador {
     eAlfabetoOuDigito(caractere) {
         return this.eDigito(caractere) || this.eAlfabeto(caractere);
     }
+    eHexDigito(caractere) {
+        return ((caractere >= '0' && caractere <= '9') ||
+            (caractere >= 'a' && caractere <= 'f') ||
+            (caractere >= 'A' && caractere <= 'F'));
+    }
+    eBinarioDigito(caractere) {
+        return caractere === '0' || caractere === '1';
+    }
+    eOctalDigito(caractere) {
+        return caractere >= '0' && caractere <= '7';
+    }
     eFinalDaLinha() {
         if (this.codigo.length === this.linha) {
             return true;
@@ -26551,7 +26830,81 @@ class Lexador {
             mensagem: 'Texto não finalizado.',
         });
     }
+    analisarHexadecimal() {
+        this.avancar(); // Pula '0'
+        this.avancar(); // Pula 'x' ou 'X'
+        while (this.eHexDigito(this.simboloAtual())) {
+            this.avancar();
+        }
+        const hexString = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
+        try {
+            const bigintValue = BigInt(hexString);
+            this.adicionarSimbolo(delegua_1.default.NUMERO, bigintValue);
+        }
+        catch (e) {
+            this.erros.push({
+                linha: this.linha + 1,
+                caractere: this.simboloAnterior(),
+                mensagem: `Literal hexadecimal inválido: ${hexString}`,
+            });
+        }
+    }
+    analisarBinario() {
+        this.avancar(); // Pula '0'
+        this.avancar(); // Pula 'b' ou 'B'
+        while (this.eBinarioDigito(this.simboloAtual())) {
+            this.avancar();
+        }
+        const binaryString = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
+        try {
+            const bigintValue = BigInt(binaryString);
+            this.adicionarSimbolo(delegua_1.default.NUMERO, bigintValue);
+        }
+        catch (e) {
+            this.erros.push({
+                linha: this.linha + 1,
+                caractere: this.simboloAnterior(),
+                mensagem: `Literal binário inválido: ${binaryString}`,
+            });
+        }
+    }
+    analisarOctal() {
+        this.avancar(); // Pula '0'
+        this.avancar(); // Pula 'o' ou 'O'
+        while (this.eOctalDigito(this.simboloAtual())) {
+            this.avancar();
+        }
+        const octalString = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
+        try {
+            const bigintValue = BigInt(octalString);
+            this.adicionarSimbolo(delegua_1.default.NUMERO, bigintValue);
+        }
+        catch (e) {
+            this.erros.push({
+                linha: this.linha + 1,
+                caractere: this.simboloAnterior(),
+                mensagem: `Literal octal inválido: ${octalString}`,
+            });
+        }
+    }
     analisarNumero() {
+        // Verifica se é um literal especial (hexadecimal, binário ou octal)
+        if (this.simboloAtual() === '0') {
+            const proximoChar = this.proximoSimbolo();
+            if (proximoChar === 'x' || proximoChar === 'X') {
+                this.analisarHexadecimal();
+                return;
+            }
+            else if (proximoChar === 'b' || proximoChar === 'B') {
+                this.analisarBinario();
+                return;
+            }
+            else if (proximoChar === 'o' || proximoChar === 'O') {
+                this.analisarOctal();
+                return;
+            }
+        }
+        // Análise de número decimal normal
         while (this.eDigito(this.simboloAtual())) {
             this.avancar();
         }
@@ -27442,6 +27795,7 @@ exports.default = {
     INTEIRO: 'inteiro',
     LOGICO: 'logico',
     LÓGICO: 'lógico',
+    LONGO: 'longo',
     MODULO: 'modulo',
     MÓDULO: 'módulo',
     NUMERO: 'numero',
@@ -27457,6 +27811,7 @@ exports.default = {
     VETOR_INTEIRO: 'inteiro[]',
     VETOR_LOGICO: 'logico[]',
     VETOR_LÓGICO: 'lógico[]',
+    VETOR_LONGO: 'longo[]',
     VETOR_NUMERO: 'numero[]',
     VETOR_NÚMERO: 'número[]',
     VETOR_QUALQUER: 'qualquer[]',
@@ -44553,6 +44908,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TradutorMermaidJs = void 0;
 const construtos_1 = require("../construtos");
+const declaracoes_1 = require("../declaracoes");
 const mermaid_1 = require("./mermaid");
 const delegua_1 = __importDefault(require("../tipos-de-simbolos/delegua"));
 /**
@@ -44841,9 +45197,19 @@ class TradutorMermaidJs {
             : aresta;
         if (declaracao.caminhoSenao) {
             this.anteriores = [];
-            const arestaSenao = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.caminhoSenao.linha}(senão)`);
-            vertices.push(new mermaid_1.VerticeFluxograma(aresta, arestaSenao, 'Não'));
-            this.anteriores.push(arestaSenao);
+            // Verifica se é "senão se" ou apenas "senão"
+            const ehSenaoSe = declaracao.caminhoSenao.constructor === declaracoes_1.Se;
+            if (ehSenaoSe) {
+                // Para "senão se", conecta diretamente ao próximo condicional sem nó intermediário
+                this.anteriores.push(aresta);
+                this.ultimaDicaVertice = 'Não';
+            }
+            else {
+                // Para "senão" simples, cria o nó intermediário
+                const arestaSenao = new mermaid_1.ArestaFluxograma(declaracao, `Linha${declaracao.caminhoSenao.linha}(senão)`);
+                vertices.push(new mermaid_1.VerticeFluxograma(aresta, arestaSenao, 'Não'));
+                this.anteriores.push(arestaSenao);
+            }
             const verticesSenao = await declaracao.caminhoSenao.aceitar(this);
             vertices = vertices.concat(verticesSenao);
         }
@@ -45298,11 +45664,12 @@ class TradutorMermaidJs {
         });
     }
     async logicaComumTraducaoVarEConst(declaracaoVarOuConst, textoInicial) {
+        let adicional = '';
         if (declaracaoVarOuConst.inicializador) {
-            textoInicial += `, iniciada com: ${await declaracaoVarOuConst.inicializador.aceitar(this)}`;
+            adicional += `, iniciada com: ${await declaracaoVarOuConst.inicializador.aceitar(this)}`;
         }
-        textoInicial += ')';
-        return Promise.resolve(textoInicial);
+        adicional += ')';
+        return Promise.resolve(adicional);
     }
     /**
      * Ponto de entrada para a tradução de declarações em um fluxograma
@@ -45361,7 +45728,7 @@ class TradutorMermaidJs {
 }
 exports.TradutorMermaidJs = TradutorMermaidJs;
 
-},{"../construtos":100,"../tipos-de-simbolos/delegua":247,"./mermaid":257}],271:[function(require,module,exports){
+},{"../construtos":100,"../declaracoes":147,"../tipos-de-simbolos/delegua":247,"./mermaid":257}],271:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TradutorPortugolIpt = void 0;

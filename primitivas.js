@@ -2655,7 +2655,7 @@ class Deceto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()}, ${this.decimo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()}, ${this.decimo.paraTextoSaida()})`;
     }
 }
 exports.Deceto = Deceto;
@@ -2677,7 +2677,7 @@ class Dupla extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()})`;
     }
 }
 exports.Dupla = Dupla;
@@ -2787,7 +2787,7 @@ class Noneto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()}, ${this.nono.paraTextoSaida()})`;
     }
 }
 exports.Noneto = Noneto;
@@ -2827,7 +2827,7 @@ class Octeto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()}, ${this.oitavo.paraTextoSaida()})`;
     }
 }
 exports.Octeto = Octeto;
@@ -2853,7 +2853,7 @@ class Quarteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()})`;
     }
 }
 exports.Quarteto = Quarteto;
@@ -2881,7 +2881,7 @@ class Quinteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, , ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, , ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()})`;
     }
 }
 exports.Quinteto = Quinteto;
@@ -2919,7 +2919,7 @@ class Septeto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()}, ${this.setimo.paraTextoSaida()})`;
     }
 }
 exports.Septeto = Septeto;
@@ -2949,7 +2949,7 @@ class Sexteto extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()}, ${this.quarto.paraTextoSaida()}, ${this.quinto.paraTextoSaida()}, ${this.sexto.paraTextoSaida()})`;
     }
 }
 exports.Sexteto = Sexteto;
@@ -2973,7 +2973,7 @@ class Trio extends tupla_1.Tupla {
             ` />`);
     }
     paraTextoSaida() {
-        return `[(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()})]`;
+        return `(${this.primeiro.paraTextoSaida()}, ${this.segundo.paraTextoSaida()}, ${this.terceiro.paraTextoSaida()})`;
     }
 }
 exports.Trio = Trio;
@@ -3200,6 +3200,7 @@ function inferirTipoVariavel(variavel) {
         case 'Number':
         case 'number':
             return 'número';
+        case 'BigInt':
         case 'bigint':
             return 'longo';
         case 'Boolean':
@@ -3293,6 +3294,7 @@ exports.default = {
     INTEIRO: 'inteiro',
     LOGICO: 'logico',
     LÓGICO: 'lógico',
+    LONGO: 'longo',
     MODULO: 'modulo',
     MÓDULO: 'módulo',
     NUMERO: 'numero',
@@ -3308,6 +3310,7 @@ exports.default = {
     VETOR_INTEIRO: 'inteiro[]',
     VETOR_LOGICO: 'logico[]',
     VETOR_LÓGICO: 'lógico[]',
+    VETOR_LONGO: 'longo[]',
     VETOR_NUMERO: 'numero[]',
     VETOR_NÚMERO: 'número[]',
     VETOR_QUALQUER: 'qualquer[]',
