@@ -257,7 +257,6 @@ function definirLinguagemPitugues() {
       'tente',
       'texto[]',
       'tipo',
-      'var',
       'variavel',
       'variável',
       'verdadeiro',
@@ -746,10 +745,11 @@ const configurarLinguagemPitugues = function () {
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         provideCompletionItems: () => {
             const formatoPrimitivas = primitivas.filter(p => p.exemploCodigo).map(({ nome, exemploCodigo: exemplo }) => {
+                 const insertText = exemplo.includes('.') ? exemplo.split('.')[1] : exemplo;
                 return {
                     label: nome,
                     kind: 17, // Keyword,
-                    insertText: exemplo.split('.')[1],
+                    insertText: insertText || nome,
                     insertTextRules: 4 // InsertAsSnippet
                 }
             });
