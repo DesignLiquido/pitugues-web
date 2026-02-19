@@ -1,6 +1,6 @@
 import { LexadorPitugues } from "@designliquido/delegua/lexador";
 import { AvaliadorSintaticoPitugues } from "@designliquido/delegua/avaliador-sintatico";
-import { AnalisadorSemantico } from "@designliquido/delegua/analisador-semantico";
+import { AnalisadorSemanticoPitugues } from "@designliquido/delegua/analisador-semantico/dialetos";
 import { InterpretadorPitugues } from "@designliquido/delegua/interpretador/dialetos/pitugues";
 
 import {
@@ -37,7 +37,7 @@ export class PituguesWeb {
     interpretador: InterpretadorPitugues;
     lexador: LexadorInterface<SimboloInterface>;
     avaliadorSintatico: AvaliadorSintaticoInterface<SimboloInterface, Declaracao>;
-    analisadorSemantico: AnalisadorSemantico;
+    analisadorSemantico: AnalisadorSemanticoPitugues;
     funcaoDeRetorno: Function;
     documentacoesBibliotecas: { [nomeBiblioteca: string]: any } 
     tradutorJavascript = new TradutorJavaScript();
@@ -50,7 +50,7 @@ export class PituguesWeb {
 
         this.lexador = new LexadorPitugues();
         this.avaliadorSintatico = new AvaliadorSintaticoPitugues();
-        this.analisadorSemantico = new AnalisadorSemantico();
+        this.analisadorSemantico = new AnalisadorSemanticoPitugues();
         this.interpretador = new InterpretadorWeb(
             "",
             false,
