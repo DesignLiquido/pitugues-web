@@ -48,7 +48,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PituguesWeb = void 0;
 const lexador_1 = require("@designliquido/delegua/lexador");
 const avaliador_sintatico_1 = require("@designliquido/delegua/avaliador-sintatico");
-const analisador_semantico_1 = require("@designliquido/delegua/analisador-semantico");
+const dialetos_1 = require("@designliquido/delegua/analisador-semantico/dialetos");
 const estruturas_1 = require("@designliquido/delegua/interpretador/estruturas");
 const tradutores_1 = require("@designliquido/delegua/tradutores");
 const informacao_elemento_sintatico_1 = require("@designliquido/delegua/informacao-elemento-sintatico");
@@ -74,7 +74,7 @@ class PituguesWeb {
         this.funcaoDeRetorno = funcaoDeRetorno || console.log;
         this.lexador = new lexador_1.LexadorPitugues();
         this.avaliadorSintatico = new avaliador_sintatico_1.AvaliadorSintaticoPitugues();
-        this.analisadorSemantico = new analisador_semantico_1.AnalisadorSemantico();
+        this.analisadorSemantico = new dialetos_1.AnalisadorSemanticoPitugues();
         this.interpretador = new interpretador_web_1.InterpretadorWeb("", false, this.funcaoDeRetorno, this.funcaoDeRetorno);
         this.interpretador.interfaceEntradaSaida = {
             question: (mensagem, callback) => {
