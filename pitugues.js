@@ -2943,6 +2943,95 @@ class AnalisadorSemanticoBase {
             correcoes: correcoes,
         });
     }
+    comparacaoArgumentosContraParametrosFuncao(simboloFuncao, parametros, argumentos) {
+        if (parametros.length !== argumentos.length) {
+            this.erro(simboloFuncao, `Função '${simboloFuncao.lexema}' espera ${parametros.length} parâmetros. Atual: ${argumentos.length}.`);
+        }
+        for (let [indice, parametro] of parametros.entries()) {
+            const argumento = argumentos[indice];
+            if (argumento) {
+                // Usando `obterTipoExpressao` para resolver adequadamente o tipo do argumento, 
+                // independentemente de ser um `Literal` (tipo já resolvido), `Variavel` (tipo inferido do
+                // escopo), `Binario`, `Agrupamento`, ou qualquer outro construto (retorna `null` quando
+                // o tipo não pode ser determinado em tempo de compilação).
+                const tipoArgumento = this.obterTipoExpressao(argumento);
+                // Validar apenas quando ambos os lados têm um tipo específico e determinável.
+                // Ignorar quando `tipoArgumento` é nulo (por exemplo, resultado de `Chamada`) ou `qualquer`,
+                // evitando falsos positivos para expressões cujo tipo é desconhecido em tempo de compilação.
+                if (tipoArgumento && tipoArgumento !== 'qualquer' && parametro.tipoDado) {
+                    if (parametro.tipoDado === 'texto' && tipoArgumento !== 'texto') {
+                        this.erro(simboloFuncao, `O valor passado para o parâmetro '${parametro.nome.lexema}' (${parametro.tipoDado}) é diferente do esperado pela função (${tipoArgumento}).`);
+                    }
+                    else if (['inteiro', 'número', 'real'].includes(parametro.tipoDado)) {
+                        // Delegua suporta conversões implícitas entre tipos numéricos, mas não
+                        // entre texto e número.
+                        if (!['inteiro', 'número', 'real'].includes(tipoArgumento)) {
+                            this.erro(simboloFuncao, `O valor passado para o parâmetro '${parametro.nome.lexema}' (${parametro.tipoDado}) é diferente do esperado pela função (${tipoArgumento}).`);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    /**
+     * Obtém o tipo de uma expressão (pode ser Literal, Variavel, Binario, Leia, etc)
+     */
+    obterTipoExpressao(expressao) {
+        if (expressao instanceof construtos_1.Literal) {
+            return expressao.tipo;
+        }
+        if (expressao instanceof construtos_1.Variavel) {
+            const variavel = this.gerenciadorEscopos.buscar(expressao.simbolo.lexema);
+            return (variavel === null || variavel === void 0 ? void 0 : variavel.tipo) || null;
+        }
+        if (expressao instanceof construtos_1.Binario) {
+            // Para binários, tentamos inferir o tipo baseado nos operandos
+            return this.inferirTipoBinario(expressao);
+        }
+        if (expressao instanceof construtos_1.Logico) {
+            // Operadores lógicos sempre retornam tipo lógico
+            return 'lógico';
+        }
+        if (expressao instanceof construtos_1.Agrupamento) {
+            return this.obterTipoExpressao(expressao.expressao);
+        }
+        if (expressao instanceof construtos_1.Leia) {
+            // leia() sempre retorna texto
+            return 'texto';
+        }
+        return null;
+    }
+    /**
+     * Infere o tipo de resultado de uma operação binária
+     */
+    inferirTipoBinario(binario) {
+        const operadoresMatematicos = ['ADICAO', 'SUBTRACAO', 'MULTIPLICACAO', 'DIVISAO', 'MODULO'];
+        const operadoresComparacao = ['MAIOR', 'MAIOR_IGUAL', 'MENOR', 'MENOR_IGUAL', 'IGUAL', 'DIFERENTE'];
+        // Operadores de comparação sempre retornam lógico
+        if (operadoresComparacao.includes(binario.operador.tipo)) {
+            return 'lógico';
+        }
+        const tipoEsquerda = this.obterTipoExpressao(binario.esquerda);
+        const tipoDireita = this.obterTipoExpressao(binario.direita);
+        if (!tipoEsquerda || !tipoDireita) {
+            return null;
+        }
+        if (operadoresMatematicos.includes(binario.operador.tipo)) {
+            const tiposNumericos = ['inteiro', 'número', 'real'];
+            if (tiposNumericos.includes(tipoEsquerda) && tiposNumericos.includes(tipoDireita)) {
+                // Se um dos lados é 'real', o resultado é 'real'
+                if (tipoEsquerda === 'real' || tipoDireita === 'real') {
+                    return 'real';
+                }
+                return 'número';
+            }
+            // Concatenação de textos
+            if (tipoEsquerda === 'texto' || tipoDireita === 'texto') {
+                return 'texto';
+            }
+        }
+        return 'qualquer';
+    }
     /**
     * Marca as variáveis usadas em uma expressão.
     */
@@ -3262,6 +3351,7 @@ class AnalisadorSemantico extends analisador_semantico_base_1.AnalisadorSemantic
         this.pilhaVariaveis = new pilha_variaveis_1.PilhaVariaveis();
         this.gerenciadorEscopos = new gerenciador_escopos_1.GerenciadorEscopos();
         this.funcoes = {};
+        this.classesDeclararadas = new Set();
         this.atual = 0;
         this.diagnosticos = [];
     }
@@ -3766,65 +3856,6 @@ class AnalisadorSemantico extends analisador_semantico_base_1.AnalisadorSemantic
             return null;
         }
     }
-    /**
-     * Obtém o tipo de uma expressão (pode ser Literal, Variavel, Binario, Leia, etc)
-     */
-    obterTipoExpressao(expressao) {
-        if (expressao instanceof construtos_1.Literal) {
-            return expressao.tipo;
-        }
-        if (expressao instanceof construtos_1.Variavel) {
-            const variavel = this.gerenciadorEscopos.buscar(expressao.simbolo.lexema);
-            return (variavel === null || variavel === void 0 ? void 0 : variavel.tipo) || null;
-        }
-        if (expressao instanceof construtos_1.Binario) {
-            // Para binários, tentamos inferir o tipo baseado nos operandos
-            return this.inferirTipoBinario(expressao);
-        }
-        if (expressao instanceof construtos_1.Logico) {
-            // Operadores lógicos sempre retornam tipo lógico
-            return 'lógico';
-        }
-        if (expressao instanceof construtos_1.Agrupamento) {
-            return this.obterTipoExpressao(expressao.expressao);
-        }
-        if (expressao instanceof construtos_1.Leia) {
-            // leia() sempre retorna texto
-            return 'texto';
-        }
-        return null;
-    }
-    /**
-     * Infere o tipo de resultado de uma operação binária
-     */
-    inferirTipoBinario(binario) {
-        const operadoresMatematicos = ['ADICAO', 'SUBTRACAO', 'MULTIPLICACAO', 'DIVISAO', 'MODULO'];
-        const operadoresComparacao = ['MAIOR', 'MAIOR_IGUAL', 'MENOR', 'MENOR_IGUAL', 'IGUAL', 'DIFERENTE'];
-        // Operadores de comparação sempre retornam lógico
-        if (operadoresComparacao.includes(binario.operador.tipo)) {
-            return 'lógico';
-        }
-        const tipoEsquerda = this.obterTipoExpressao(binario.esquerda);
-        const tipoDireita = this.obterTipoExpressao(binario.direita);
-        if (!tipoEsquerda || !tipoDireita) {
-            return null;
-        }
-        if (operadoresMatematicos.includes(binario.operador.tipo)) {
-            const tiposNumericos = ['inteiro', 'número', 'real'];
-            if (tiposNumericos.includes(tipoEsquerda) && tiposNumericos.includes(tipoDireita)) {
-                // Se um dos lados é 'real', o resultado é 'real'
-                if (tipoEsquerda === 'real' || tipoDireita === 'real') {
-                    return 'real';
-                }
-                return 'número';
-            }
-            // Concatenação de textos
-            if (tipoEsquerda === 'texto' || tipoDireita === 'texto') {
-                return 'texto';
-            }
-        }
-        return 'qualquer';
-    }
     verificarExistenciaConstruto(construto) {
         if (construto instanceof construtos_1.Variavel) {
             if (!this.gerenciadorEscopos.buscar(construto.simbolo.lexema)) {
@@ -4084,6 +4115,19 @@ class AnalisadorSemantico extends analisador_semantico_base_1.AnalisadorSemantic
         }
         return Promise.resolve();
     }
+    visitarDeclaracaoClasse(declaracao) {
+        if (declaracao.superClasse) {
+            const nomeSuperclasse = declaracao.superClasse.simbolo.lexema;
+            if (nomeSuperclasse === declaracao.simbolo.lexema) {
+                this.erro(declaracao.superClasse.simbolo, `A classe '${declaracao.simbolo.lexema}' não pode herdar de si mesma.`);
+            }
+            else if (!this.classesDeclararadas.has(nomeSuperclasse)) {
+                this.erro(declaracao.superClasse.simbolo, `Superclasse '${nomeSuperclasse}' não foi declarada.`);
+            }
+        }
+        this.classesDeclararadas.add(declaracao.simbolo.lexema);
+        return Promise.resolve();
+    }
     visitarDeclaracaoDefinicaoFuncao(declaracao) {
         var _a;
         if (declaracao.funcao.tipo === undefined) {
@@ -4158,6 +4202,7 @@ class AnalisadorSemantico extends analisador_semantico_base_1.AnalisadorSemantic
     }
     async analisar(declaracoes) {
         this.gerenciadorEscopos = new gerenciador_escopos_1.GerenciadorEscopos();
+        this.classesDeclararadas = new Set();
         this.atual = 0;
         this.diagnosticos = [];
         try {
@@ -4387,6 +4432,10 @@ class AvaliadorSintaticoBase {
             }
         }
         return false;
+    }
+    async declaracaoBloco() {
+        const simboloInicioBloco = this.consumir(comum_1.default.CHAVE_ESQUERDA, "Esperado '{' para abertura de bloco.");
+        return new declaracoes_1.Bloco(simboloInicioBloco.hashArquivo, Number(simboloInicioBloco.linha), await this.blocoEscopo());
     }
     async finalizarChamada(entidadeChamada) {
         const argumentos = [];
@@ -4818,7 +4867,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
      * @returns {ListaCompreensao} A lista de compreensão resolvida.
      */
     async resolverCompreensaoDeLista(retornoExpressao) {
-        this.consumir(delegua_2.default.PARA, "Esperado instrução 'para' após identificado.");
+        this.consumir(delegua_2.default.PARA, "Esperado instrução 'para' após identificador.");
         this.consumir(delegua_2.default.CADA, "Esperado instrução 'cada' após 'para'.");
         const simboloVariavelIteracao = this.consumir(delegua_2.default.IDENTIFICADOR, "Esperado identificador de variável após 'para cada'.");
         if (!this.verificarSeSimboloAtualEIgualA(delegua_2.default.DE, delegua_2.default.EM)) {
@@ -4985,8 +5034,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             case delegua_2.default.TEXTO:
                 const simboloNumeroTexto = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloNumeroTexto.literal);
-                const tipoDadosElementar = (0, inferenciador_1.tipoInferenciaParaTipoDadosElementar)(tipoInferido);
-                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoDadosElementar);
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoInferido);
             case delegua_2.default.PARA:
                 const simboloPara = this.avancarEDevolverAnterior();
                 return await this.paraComoConstruto(simboloPara);
@@ -5114,6 +5162,50 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         }
         return tipoAcesso;
     }
+    /**
+     * Resolve um construto do tipo `Variavel`, `AcessoMetodoOuPropriedade` ou `AcessoIndiceVariavel`
+     * para um `ElementoMontaoTipos` correspondente, caso exista.
+     * @param construto O construto.
+     * @returns O `ElementoMontaoTipos` correspondente ou `null` se não existir.
+     */
+    resolverElementoMontao(construto) {
+        switch (construto.constructor) {
+            case construtos_1.Variavel:
+                try {
+                    const nomeVariavel = construto.simbolo.lexema;
+                    const elementoMontao = this.pilhaEscopos.obterElementoMontaoTipos(nomeVariavel);
+                    if (elementoMontao.endereco) {
+                        const referenciaMontaoTipos = this.montaoTipos.obterReferencia(construto.hashArquivo, construto.linha, elementoMontao.endereco);
+                        if (referenciaMontaoTipos instanceof elemento_montao_tipos_1.ElementoMontaoTipos) {
+                            return referenciaMontaoTipos;
+                        }
+                        return null;
+                    }
+                    return elementoMontao;
+                }
+                catch (_a) {
+                    return null;
+                }
+            case construtos_1.AcessoMetodoOuPropriedade: {
+                const acesso = construto;
+                const elementoObjeto = this.resolverElementoMontao(acesso.objeto);
+                if (!elementoObjeto) {
+                    return null;
+                }
+                return elementoObjeto.subElementos[acesso.simbolo.lexema] || null;
+            }
+            case construtos_1.AcessoIndiceVariavel: {
+                const acessoIndice = construto;
+                const elementoObjeto = this.resolverElementoMontao(acessoIndice.entidadeChamada);
+                if (!elementoObjeto || !(acessoIndice.indice instanceof construtos_1.Literal)) {
+                    return null;
+                }
+                return elementoObjeto.subElementos[String(acessoIndice.indice.valor)] || null;
+            }
+            default:
+                return null;
+        }
+    }
     async resolverCadeiaChamadas(expressaoAnterior, tipoAnterior = 'qualquer') {
         if (!this.simbolos[this.atual]) {
             return expressaoAnterior;
@@ -5131,12 +5223,10 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                 // Se não for um dicionário anônimo (ou seja, ser variável ou constante com nome)
                 if (expressaoAnterior.tipo === 'dicionário' &&
                     expressaoAnterior.constructor !== construtos_1.Dicionario) {
-                    // TODO: Achar algum caso em que aqui não seja variável.
-                    const nomeDicionario = expressaoAnterior.simbolo.lexema;
-                    const elementoDicionarioPilha = this.pilhaEscopos.obterElementoMontaoTipos(nomeDicionario);
-                    const referenciaMontaoTipos = this.montaoTipos.obterReferencia(expressaoAnterior.hashArquivo, expressaoAnterior.linha, elementoDicionarioPilha.endereco);
-                    if (nome.lexema in referenciaMontaoTipos.subElementos) {
-                        tipoInferido = referenciaMontaoTipos.subElementos[nome.lexema].tipo;
+                    const elementoMontaoTipos = this.resolverElementoMontao(expressaoAnterior);
+                    if (elementoMontaoTipos &&
+                        nome.lexema in elementoMontaoTipos.subElementos) {
+                        tipoInferido = elementoMontaoTipos.subElementos[nome.lexema].tipo;
                     }
                 }
                 const acesso = new construtos_1.AcessoMetodoOuPropriedade(this.hashArquivo, expressaoAnterior, nome, tipoInferido);
@@ -5633,8 +5723,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
     }
     async logicaComumEnquanto() {
         const condicao = await this.expressao();
-        // TODO: Talvez não seja uma ideia melhor chamar o método de `Bloco` aqui?
-        const corpo = await this.resolverDeclaracao();
+        const corpo = await this.declaracaoBloco();
         return {
             condicao,
             corpo,
@@ -5738,7 +5827,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         return new declaracoes_1.Falhar(simboloFalha, expressaoFalha);
     }
     async logicaComumFazer() {
-        const caminhoFazer = await this.resolverDeclaracao();
+        const caminhoFazer = await this.declaracaoBloco();
         this.consumir(delegua_2.default.ENQUANTO, "Esperado declaração do 'enquanto' após o escopo do 'fazer'.");
         const condicaoEnquanto = await this.expressao();
         return {
@@ -5750,8 +5839,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         try {
             this.blocos += 1;
             const { caminhoFazer, condicaoEnquanto } = await this.logicaComumFazer();
-            return new declaracoes_1.Fazer(simboloFazer.hashArquivo, Number(simboloFazer.linha), caminhoFazer, // TODO: Aqui pode ser um `Bloco`?
-            condicaoEnquanto);
+            return new declaracoes_1.Fazer(simboloFazer.hashArquivo, Number(simboloFazer.linha), caminhoFazer, condicaoEnquanto);
         }
         finally {
             this.blocos -= 1;
@@ -5835,8 +5923,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         }
         this.pilhaEscopos.definirInformacoesVariavel(nomeVariavelChave.lexema, new informacao_elemento_sintatico_1.InformacaoElementoSintatico(nomeVariavelChave.lexema, 'qualquer'));
         this.pilhaEscopos.definirInformacoesVariavel(nomeVariavelValor.lexema, new informacao_elemento_sintatico_1.InformacaoElementoSintatico(nomeVariavelValor.lexema, 'qualquer'));
-        // TODO: Talvez não seja uma ideia melhor chamar o método de `Bloco` aqui?
-        const corpo = await this.resolverDeclaracao();
+        const corpo = await this.declaracaoBloco();
         return {
             nomeVariavelChave,
             nomeVariavelValor,
@@ -5874,8 +5961,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             tipoVariavelIteracao = tipoVetor.slice(0, -2);
         }
         this.pilhaEscopos.definirInformacoesVariavel(nomeVariavelIteracao.lexema, new informacao_elemento_sintatico_1.InformacaoElementoSintatico(nomeVariavelIteracao.lexema, tipoVariavelIteracao));
-        // TODO: Talvez não seja uma ideia melhor chamar o método de `Bloco` aqui?
-        const corpo = await this.resolverDeclaracao();
+        const corpo = await this.declaracaoBloco();
         return {
             variavelIteracao,
             vetor: vetorOuDicionario,
@@ -5924,8 +6010,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         if (comParenteses) {
             this.consumir(delegua_2.default.PARENTESE_DIREITO, "Esperado ')' após cláusulas de inicialização, condição e incremento.");
         }
-        // TODO: Talvez não seja uma ideia melhor chamar o método de `Bloco` aqui?
-        const corpo = await this.resolverDeclaracao();
+        const corpo = await this.declaracaoBloco();
         return {
             inicializador,
             condicao,
@@ -6456,9 +6541,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         let superClasse = null;
         if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.HERDA)) {
             const simboloSuperclasse = this.consumir(delegua_2.default.IDENTIFICADOR, 'Esperado nome da Superclasse.');
-            // TODO: Validar classes existentes?
             this.superclasseAtual = simboloSuperclasse.lexema;
-            // TODO: Colocar tipo aqui?
             superClasse = new construtos_1.Variavel(this.hashArquivo, this.simbolos[this.atual - 1], simboloSuperclasse.lexema);
         }
         this.consumir(delegua_2.default.CHAVE_ESQUERDA, "Esperado '{' antes do escopo da classe.");
@@ -6569,8 +6652,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             case delegua_2.default.AJUDA:
                 return await this.declaracaoAjuda();
             case delegua_2.default.CHAVE_ESQUERDA:
-                const simboloInicioBloco = this.avancarEDevolverAnterior();
-                return new declaracoes_1.Bloco(simboloInicioBloco.hashArquivo, Number(simboloInicioBloco.linha), await this.blocoEscopo());
+                return await this.declaracaoBloco();
             case delegua_2.default.COMENTARIO:
                 return this.declaracaoComentarioUmaLinha();
             case delegua_2.default.CONSTANTE:
@@ -8044,8 +8126,7 @@ class AvaliadorSintaticoPitugues {
             case pitugues_2.default.TEXTO:
                 const simboloLiteral = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloLiteral.literal);
-                const tipoDadosElementar = (0, inferenciador_1.tipoInferenciaParaTipoDadosElementar)(tipoInferido);
-                return new construtos_1.Literal(this.hashArquivo, Number(simboloLiteral.linha), simboloLiteral.literal, tipoDadosElementar);
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloLiteral.linha), simboloLiteral.literal, tipoInferido);
             case pitugues_2.default.TIPO:
                 const simboloTipo = this.avancarEDevolverAnterior();
                 this.consumir(pitugues_2.default.PARENTESE_ESQUERDO, "Esperado '(' após 'tipo'.");
@@ -8727,7 +8808,7 @@ class AvaliadorSintaticoPitugues {
      * @returns {ListaCompreensao} A lista de compreensão resolvida.
      */
     async resolverCompreensaoDeLista(retornoExpressao) {
-        this.consumir(pitugues_2.default.PARA, "Esperado instrução 'para' após identificado.");
+        this.consumir(pitugues_2.default.PARA, "Esperado instrução 'para' após identificador.");
         this.consumir(pitugues_2.default.CADA, "Esperado instrução 'cada' após 'para'.");
         const simboloVariavelIteracao = this.consumir(pitugues_2.default.IDENTIFICADOR, "Esperado identificador de variável após 'para cada'.");
         // TODO: Manter essa validação aqui? Se sim, como resolver a expressão?
@@ -9475,8 +9556,7 @@ class AvaliadorSintaticoPrisma extends avaliador_sintatico_base_1.AvaliadorSinta
             case prisma_1.default.TEXTO:
                 const simboloLiteral = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloLiteral.literal);
-                const tipoDadosElementar = (0, inferenciador_1.tipoInferenciaParaTipoDadosElementar)(tipoInferido);
-                return new construtos_1.Literal(this.hashArquivo, Number(simboloLiteral.linha), simboloLiteral.literal, tipoDadosElementar);
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloLiteral.linha), simboloLiteral.literal, tipoInferido);
             case prisma_1.default.IDENTIFICADOR:
                 const simboloIdentificador = this.avancarEDevolverAnterior();
                 let tipoOperando;
@@ -10301,8 +10381,7 @@ class AvaliadorSintaticoTenda extends avaliador_sintatico_base_1.AvaliadorSintat
             case tenda_1.default.TEXTO:
                 const simboloNumeroTexto = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloNumeroTexto.literal);
-                const tipoDadosElementar = (0, inferenciador_1.tipoInferenciaParaTipoDadosElementar)(tipoInferido);
-                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoDadosElementar);
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoInferido);
             case tenda_1.default.PARENTESE_ESQUERDO:
                 this.avancarEDevolverAnterior();
                 const expressao = await this.expressao();
@@ -11148,8 +11227,7 @@ class MicroAvaliadorSintaticoPitugues extends micro_avaliador_sintatico_base_1.M
             case pitugues_1.default.TEXTO:
                 const simboloNumeroTexto = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloNumeroTexto.literal);
-                const tiposDadosElementar = (0, inferenciador_1.tipoInferenciaParaTipoDadosElementar)(tipoInferido);
-                return new construtos_1.Literal(-1, Number(this.linha), simboloNumeroTexto.literal, tiposDadosElementar);
+                return new construtos_1.Literal(-1, Number(this.linha), simboloNumeroTexto.literal, tipoInferido);
             case pitugues_1.default.IDENTIFICADOR:
                 const simboloIdentificador = this.avancarEDevolverAnterior();
                 return new construtos_1.Variavel(-1, simboloIdentificador);
@@ -11520,31 +11598,24 @@ class MicroAvaliadorSintatico extends micro_avaliador_sintatico_base_1.MicroAval
         const simboloAtual = this.simbolos[this.atual];
         let valores = [];
         switch (simboloAtual.tipo) {
-            // TODO: Verificar se vamos usar isso.
-            /* case tiposDeSimbolos.CHAVE_ESQUERDA:
+            case delegua_1.default.CHAVE_ESQUERDA:
                 this.avancarEDevolverAnterior();
                 const chaves = [];
                 valores = [];
-
-                if (this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.CHAVE_DIREITA)) {
-                    return new Dicionario(-1, Number(this.linha), [], []);
+                if (this.verificarSeSimboloAtualEIgualA(delegua_1.default.CHAVE_DIREITA)) {
+                    return new construtos_1.Dicionario(-1, Number(this.linha), [], []);
                 }
-
-                while (!this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.CHAVE_DIREITA)) {
-                    const chave = this.atribuir();
-                    this.consumir(tiposDeSimbolos.DOIS_PONTOS, "Esperado ':' entre chave e valor.");
-                    const valor = this.atribuir();
-
+                while (!this.verificarSeSimboloAtualEIgualA(delegua_1.default.CHAVE_DIREITA)) {
+                    const chave = this.declaracao();
+                    this.consumir(delegua_1.default.DOIS_PONTOS, "Esperado ':' entre chave e valor.");
+                    const valor = this.declaracao();
                     chaves.push(chave);
                     valores.push(valor);
-
-                    if (this.simbolos[this.atual].tipo !== tiposDeSimbolos.CHAVE_DIREITA) {
-                        this.consumir(tiposDeSimbolos.VIRGULA, 'Esperado vírgula antes da próxima expressão.');
+                    if (this.simbolos[this.atual].tipo !== delegua_1.default.CHAVE_DIREITA) {
+                        this.consumir(delegua_1.default.VIRGULA, 'Esperado vírgula antes da próxima expressão.');
                     }
                 }
-
-                return new Dicionario(-1, Number(this.linha), chaves, valores); */
-            // TODO: Verificar se vamos usar isso.
+                return new construtos_1.Dicionario(-1, Number(this.linha), chaves, valores);
             case delegua_1.default.COLCHETE_ESQUERDO:
                 this.avancarEDevolverAnterior();
                 valores = [];
@@ -12497,20 +12568,6 @@ async function mapear(interpretador, vetor, funcaoMapeamento) {
         }, 'Parâmetro inválido. O primeiro parâmetro da função mapear() não pode ser nulo.'));
     const valorVetor = interpretador.resolverValor(vetor);
     const valorFuncaoMapeamento = interpretador.resolverValor(funcaoMapeamento);
-    // TODO: As lógicas de validação abaixo deixam de fazer sentido com a validação de argumentos feita
-    // na avaliação sintática. Estudar remoção.
-    if (!Array.isArray(valorVetor)) {
-        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
-            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
-            linha: interpretador.linhaDeclaracaoAtual,
-        }, 'Parâmetro inválido. O primeiro parâmetro da função mapear() deve ser um vetor.'));
-    }
-    if (valorFuncaoMapeamento.constructor !== estruturas_1.DeleguaFuncao) {
-        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
-            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
-            linha: interpretador.linhaDeclaracaoAtual,
-        }, 'Parâmetro inválido. O segundo parâmetro da função mapear() deve ser uma função.'));
-    }
     const resultados = [];
     for (let indice = 0; indice < valorVetor.length; ++indice) {
         const informacoesRetorno = await valorFuncaoMapeamento.chamar(interpretador, [
@@ -12677,20 +12734,6 @@ async function paraCada(interpretador, vetor, funcaoFiltragem) {
     const valorFuncaoFiltragem = funcaoFiltragem.hasOwnProperty('valor')
         ? funcaoFiltragem.valor
         : funcaoFiltragem;
-    // TODO: As lógicas de validação abaixo deixam de fazer sentido com a validação de argumentos feita
-    // na avaliação sintática. Estudar remoção.
-    if (!Array.isArray(valorVetor)) {
-        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
-            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
-            linha: interpretador.linhaDeclaracaoAtual,
-        }, 'Parâmetro inválido. O primeiro parâmetro da função paraCada() deve ser um vetor.'));
-    }
-    if (valorFuncaoFiltragem.constructor !== estruturas_1.DeleguaFuncao) {
-        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
-            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
-            linha: interpretador.linhaDeclaracaoAtual,
-        }, 'Parâmetro inválido. O segundo parâmetro da função paraCada() deve ser uma função.'));
-    }
     for (let indice = 0; indice < valorVetor.length; ++indice) {
         await valorFuncaoFiltragem.chamar(interpretador, [valorVetor[indice]]);
     }
@@ -12956,21 +12999,11 @@ async function todosEmCondicao(interpretador, iteravel, funcaoCondicional) {
  */
 async function tupla(interpretador, vetor) {
     const valorVetor = interpretador.resolverValor(vetor);
-    // TODO: As lógicas de validação abaixo deixam de fazer sentido com a validação de argumentos feita
-    // na avaliação sintática. Estudar remoção.
-    if (!Array.isArray(valorVetor)) {
-        return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
-            hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
-            linha: interpretador.linhaDeclaracaoAtual,
-        }, 'Argumento de função nativa `tupla` não parece ser um vetor.'));
-    }
     const elementos = valorVetor.map(item => new construtos_1.Literal(interpretador.hashArquivoDeclaracaoAtual, interpretador.linhaDeclaracaoAtual, interpretador.resolverValor(item)));
     return new construtos_1.TuplaN(interpretador.hashArquivoDeclaracaoAtual, interpretador.linhaDeclaracaoAtual, elementos);
 }
 async function vetor(interpretador, tupla) {
     const objetoTupla = interpretador.resolverValor(tupla);
-    // TODO: As lógicas de validação abaixo deixam de fazer sentido com a validação de argumentos feita
-    // na avaliação sintática. Estudar remoção.
     if (!(objetoTupla instanceof construtos_1.Tupla || objetoTupla instanceof construtos_1.TuplaN)) {
         return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
             hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
@@ -12983,16 +13016,20 @@ async function vetor(interpretador, tupla) {
     }
     else {
         const nomeClasse = objetoTupla.constructor.name;
-        if (mapaPropriedadesTuplas.hasOwnProperty(nomeClasse)) {
-            const props = mapaPropriedadesTuplas[nomeClasse];
+        const props = mapaPropriedadesTuplas[nomeClasse];
+        if (props) {
             resultado = props.map(prop => objetoTupla[prop]);
         }
         else if (objetoTupla.elementos && Array.isArray(objetoTupla.elementos)) {
             resultado = objetoTupla.elementos;
         }
     }
-    const resultadoFinal = resultado.map(item => (item && item.hasOwnProperty('valor')) ? item.valor : item);
-    return Promise.resolve(resultadoFinal);
+    const resultadoFinal = new Array(resultado.length);
+    for (let i = 0; i < resultado.length; i++) {
+        const item = resultado[i];
+        resultadoFinal[i] = item && typeof item === 'object' && 'valor' in item ? item.valor : item;
+    }
+    return resultadoFinal;
 }
 
 },{"../construtos":100,"../excecoes":161,"../interpretador/estruturas":213,"../interpretador/estruturas/descritor-tipo-classe":211,"../interpretador/estruturas/funcao-padrao":212,"../interpretador/estruturas/objeto-delegua-classe":217,"../quebras":247}],62:[function(require,module,exports){
@@ -15212,19 +15249,24 @@ exports.AtribuicaoPorIndicesMatriz = AtribuicaoPorIndicesMatriz;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Atribuir = void 0;
+const variavel_1 = require("./variavel");
 /**
  * Construto de atribuição de um valor a um símbolo.
  */
 class Atribuir {
-    constructor(hashArquivo, alvo, valor, 
-    // indice so é usado para variaveis de vetores
-    // TODO: criar alguma validaçao para garantir que `indice` só seja passado para variáveis de vetores
-    indice, simboloOperador) {
+    constructor(hashArquivo, alvo, valor, indice, simboloOperador) {
         this.linha = Number(alvo.linha);
         this.hashArquivo = hashArquivo;
         this.alvo = alvo;
         this.valor = valor;
         if (indice !== undefined) {
+            const alvoComoVariavel = alvo;
+            const tipoAlvo = alvoComoVariavel === null || alvoComoVariavel === void 0 ? void 0 : alvoComoVariavel.tipo;
+            const alvoSuportaIndice = alvo instanceof variavel_1.Variavel &&
+                (tipoAlvo === 'vetor' || tipoAlvo === 'dicionário' || tipoAlvo === 'qualquer' || (tipoAlvo === null || tipoAlvo === void 0 ? void 0 : tipoAlvo.endsWith('[]')));
+            if (!alvoSuportaIndice) {
+                throw new Error("`indice` só pode ser informado quando o alvo for uma variável de vetor ou dicionário.");
+            }
             this.indice = indice;
         }
         if (simboloOperador !== undefined) {
@@ -15247,7 +15289,7 @@ class Atribuir {
 }
 exports.Atribuir = Atribuir;
 
-},{}],83:[function(require,module,exports){
+},{"./variavel":127}],83:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Binario = void 0;
@@ -17472,7 +17514,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TipoNativoSimbolo = void 0;
 exports.inferirTipoVariavel = inferirTipoVariavel;
-exports.tipoInferenciaParaTipoDadosElementar = tipoInferenciaParaTipoDadosElementar;
 const primitivos_1 = __importDefault(require("./tipos-de-dados/primitivos"));
 const delegua_1 = __importDefault(require("./tipos-de-dados/delegua"));
 const delegua_2 = __importDefault(require("./tipos-de-simbolos/delegua"));
@@ -17584,13 +17625,6 @@ function inferirTipoVariavel(variavel) {
             return 'função';
         case 'symbol':
             return 'símbolo';
-    }
-}
-function tipoInferenciaParaTipoDadosElementar(tipoInferencia) {
-    switch (tipoInferencia) {
-        // TODO: Colocar exceções aqui.
-        default:
-            return tipoInferencia;
     }
 }
 
@@ -22378,7 +22412,6 @@ class InterpretadorBase {
             return await this.executar(declaracao.caminhoEntao);
         }
         for (let i = 0; i < declaracao.caminhosSeSenao.length; i++) {
-            // TODO: Qual o tipo de `atual`?
             const atual = declaracao.caminhosSeSenao[i];
             if (this.eVerdadeiro(await this.avaliar(atual.condicao))) {
                 return await this.executar(atual.caminho);
@@ -28812,6 +28845,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     ADICAO: 'ADICAO',
+    CHAVE_ESQUERDA: 'CHAVE_ESQUERDA',
     DIFERENTE: 'DIFERENTE',
     DIVISAO: 'DIVISAO',
     DIVISAO_INTEIRA: 'DIVISAO_INTEIRA',
@@ -45665,14 +45699,22 @@ class TradutorJavaScript {
             case 'adicionar':
             case 'empilhar':
                 return `${objetoResolvido}.push(${textoArgumentos})`;
+            case 'concatenar':
+                return `${objetoResolvido}.concat(${argumentosResolvidos[0]})`;
+            case 'encaixar':
+                return `${objetoResolvido}.splice(${textoArgumentos})`;
             case 'fatiar':
-                return `${objetoResolvido}.slice(${argumentos[0]}, ${argumentos[1]})`;
+                return `${objetoResolvido}.slice(${textoArgumentos})`;
+            case 'filtrarPor':
+                return `${objetoResolvido}.filter(${this.traduzirFuncaoAnonimaParaLambda(argumentos[0])})`;
             case 'inclui':
                 return `${objetoResolvido}.includes(${argumentosResolvidos[0]})`;
             case 'inverter':
                 return `${objetoResolvido}.toReversed()`;
             case 'juntar':
-                return `${argumentosResolvidos[0]}.join(${objetoResolvido})`;
+                return argumentosResolvidos.length > 0
+                    ? `${objetoResolvido}.join(${argumentosResolvidos[0]})`
+                    : `${objetoResolvido}.join()`;
             case 'maiusculo':
                 return `${objetoResolvido}.toUpperCase()`;
             case 'mapear':
@@ -45680,9 +45722,11 @@ class TradutorJavaScript {
             case 'minusculo':
                 return `${objetoResolvido}.toLowerCase()`;
             case 'ordenar':
-                return `${objetoResolvido}.sort()`;
+                return argumentosResolvidos.length > 0
+                    ? `${objetoResolvido}.sort(${argumentosResolvidos[0]})`
+                    : `${objetoResolvido}.sort()`;
             case 'remover':
-                return `delete ${objetoResolvido}[${argumentosResolvidos[0]}]`;
+                return `${objetoResolvido}.splice(${objetoResolvido}.indexOf(${argumentosResolvidos[0]}), 1)`;
             case 'removerPrimeiro':
                 return `${objetoResolvido}.shift()`;
             case 'removerUltimo':
@@ -46100,9 +46144,26 @@ class TradutorJavaScript {
         }
         return resultado;
     }
-    // TODO: Talvez terminar (ou remover, sei lá).
     traduzirFuncaoAnonimaParaLambda(argumento) {
-        return '';
+        var _a, _b, _c;
+        if (argumento instanceof construtos_1.FuncaoConstruto) {
+            const params = argumento.parametros.map((p) => p.nome.lexema).join(', ');
+            // Retorno de um valor → retorno conciso
+            if (argumento.corpo.length === 1 && argumento.corpo[0] instanceof declaracoes_1.Retorna) {
+                const retorna = argumento.corpo[0];
+                const expr = this.dicionarioConstrutos[retorna.valor.constructor.name](retorna.valor);
+                return `(${params}) => ${expr}`;
+            }
+            // O JavaScript não tem suporte nativo para blocos de função anônimos, então usamos uma função de seta com corpo de bloco.
+            return `(${params}) => ${this.logicaComumBlocoEscopo(argumento.corpo)}`;
+        }
+        if (argumento instanceof construtos_1.Variavel) {
+            return argumento.simbolo.lexema;
+        }
+        if (argumento instanceof construtos_1.ReferenciaFuncao || argumento instanceof construtos_1.ArgumentoReferenciaFuncao) {
+            return argumento.simboloFuncao.lexema;
+        }
+        return (_c = (_b = (_a = this.dicionarioConstrutos)[argumento.constructor.name]) === null || _b === void 0 ? void 0 : _b.call(_a, argumento)) !== null && _c !== void 0 ? _c : '';
     }
     traduzirExpressaoAcessoMetodoVetor(objeto, nomeMetodo, argumentos) {
         const objetoResolvido = this.dicionarioConstrutos[objeto.constructor.name](objeto);
@@ -46111,34 +46172,43 @@ class TradutorJavaScript {
             const argumentoResolvido = this.dicionarioConstrutos[argumento.constructor.name](argumento);
             argumentosResolvidos.push(argumentoResolvido);
         }
+        const textoArgumentos = argumentosResolvidos.join(', ');
         switch (nomeMetodo) {
             case 'adicionar':
             case 'empilhar':
-                let textoArgumentos = argumentosResolvidos.reduce((atual, proximo) => (atual += proximo + ', '), '');
-                textoArgumentos = textoArgumentos.slice(0, -2);
                 return `${objetoResolvido}.push(${textoArgumentos})`;
+            case 'concatenar':
+                return `${objetoResolvido}.concat(${argumentosResolvidos[0]})`;
+            case 'encaixar':
+                return `${objetoResolvido}.splice(${textoArgumentos})`;
             case 'fatiar':
-                return `${objetoResolvido}[${argumentos[0]}:${argumentos[1]}]`;
+                return `${objetoResolvido}.slice(${textoArgumentos})`;
+            case 'filtrarPor':
+                return `${objetoResolvido}.filter(${this.traduzirFuncaoAnonimaParaLambda(argumentos[0])})`;
             case 'inclui':
-                return `${argumentos[0]} in ${objetoResolvido}`;
+                return `${objetoResolvido}.includes(${argumentosResolvidos[0]})`;
             case 'inverter':
-                return `reversed(${objetoResolvido})`;
+                return `${objetoResolvido}.toReversed()`;
             case 'juntar':
-                return `${argumentos[0]}.join(${objetoResolvido})`;
+                return argumentosResolvidos.length > 0
+                    ? `${objetoResolvido}.join(${argumentosResolvidos[0]})`
+                    : `${objetoResolvido}.join()`;
             case 'mapear':
-                return `list(map(${this.traduzirFuncaoAnonimaParaLambda(argumentos[0])}), ${objetoResolvido})`;
+                return `${objetoResolvido}.map(${this.traduzirFuncaoAnonimaParaLambda(argumentos[0])})`;
             case 'ordenar':
-                return `${objetoResolvido}.sort()`;
+                return argumentosResolvidos.length > 0
+                    ? `${objetoResolvido}.sort(${argumentosResolvidos[0]})`
+                    : `${objetoResolvido}.sort()`;
             case 'remover':
-                return `del ${objetoResolvido}[${argumentos[0]}]`;
+                return `${objetoResolvido}.splice(${objetoResolvido}.indexOf(${argumentosResolvidos[0]}), 1)`;
             case 'removerPrimeiro':
-                return `del ${objetoResolvido}[0]`;
+                return `${objetoResolvido}.shift()`;
             case 'removerUltimo':
-                return `del ${objetoResolvido}[-1]`;
+                return `${objetoResolvido}.pop()`;
             case 'somar':
-                return `sum(${objetoResolvido})`;
+                return `${objetoResolvido}.reduce((acumulador, valorAtual) => acumulador + valorAtual, 0)`;
             case 'tamanho':
-                return `len(${objetoResolvido})`;
+                return `${objetoResolvido}.length`;
         }
     }
     traduzirExpressaoAcessoMetodo(acessoMetodo, argumentos) {
@@ -46187,16 +46257,14 @@ class TradutorJavaScript {
         let esquerda = this.dicionarioConstrutos[logico.esquerda.constructor.name](logico.esquerda);
         return `${direita} ${operador} ${esquerda}`;
     }
-    // TODO: Eliminar o soft cast para `any`.
     traduzirExpressaoAtribuicaoPorIndice(AtribuicaoPorIndice) {
-        var _a, _b;
         let resultado = '';
         resultado += AtribuicaoPorIndice.objeto.simbolo.lexema + '[';
         resultado +=
             this.dicionarioConstrutos[AtribuicaoPorIndice.indice.constructor.name](AtribuicaoPorIndice.indice) + ']';
         resultado += ' = ';
-        if ((_b = (_a = AtribuicaoPorIndice === null || AtribuicaoPorIndice === void 0 ? void 0 : AtribuicaoPorIndice.valor) === null || _a === void 0 ? void 0 : _a.simbolo) === null || _b === void 0 ? void 0 : _b.lexema) {
-            resultado += `${AtribuicaoPorIndice.valor.simbolo.lexema}`;
+        if (AtribuicaoPorIndice.valor instanceof construtos_1.Variavel) {
+            resultado += AtribuicaoPorIndice.valor.simbolo.lexema;
         }
         else {
             resultado += this.dicionarioConstrutos[AtribuicaoPorIndice.valor.constructor.name](AtribuicaoPorIndice.valor);
