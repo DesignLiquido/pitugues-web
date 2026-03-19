@@ -342,15 +342,15 @@ exports.metodosBibliotecaGlobal = [
     {
         nome: 'todos',
         documentacao: '### Descrição\n\n' +
-            'Verifica se todos os elementos do vetor satisfazem a condição fornecida pela função de teste.' +
+            'Verifica se todos os elementos do vetor são de valoração verdadeira.' +
             '\n\n### Exemplo de Código\n' +
             '```pitugues\n' +
-            'numeros = [2, 4, 6, 8, 10]\n' +
-            'funcao ehPar(valor):\n' +
-            '    retorna valor % 2 == 0\n' +
-            'escreva(todos(numeros, ehPar)) // verdadeiro\n' +
+            'numeros = [1, 2, 3, 4, 5]\n' +
+            'escreva(todos(numeros)) // verdadeiro\n' +
+            'vetorFalso = [1, falso,]\n' +
+            'escreva(todos(vetorFalso)) // falso\n' +
             '```',
-        exemploCodigo: 'todos(vetor, funcaoTeste)'
+        exemploCodigo: 'todos(vetor)'
     },
     {
         nome: 'todosEmCondicao',
@@ -3158,18 +3158,24 @@ exports.Variavel = Variavel;
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vetor = void 0;
+const comentario_como_construto_1 = require("./comentario-como-construto");
+const separador_1 = require("./separador");
 class Vetor {
-    constructor(hashArquivo, linha, valores, tamanho, tipo) {
+    constructor(hashArquivo, linha, valores, tipo) {
         this.linha = linha;
         this.hashArquivo = hashArquivo;
         this.tipo = tipo;
         this.valores = valores;
-        if (tamanho) {
-            this.tamanho = tamanho;
-        }
-        else {
-            this.tamanho = this.valores.length;
-        }
+    }
+    /**
+     * Retorna apenas os elementos de dados do vetor, excluindo nós sintáticos
+     * (Separador, comentários) que podem aparecer entre os elementos.
+     */
+    get elementos() {
+        return this.valores.filter((v) => v.constructor !== separador_1.Separador && v.constructor !== comentario_como_construto_1.ComentarioComoConstruto);
+    }
+    get tamanho() {
+        return this.elementos.length;
     }
     async aceitar(visitante) {
         return await visitante.visitarExpressaoVetor(this);
@@ -3183,7 +3189,7 @@ class Vetor {
 }
 exports.Vetor = Vetor;
 
-},{}],69:[function(require,module,exports){
+},{"./comentario-como-construto":25,"./separador":51}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ErroEmTempoDeExecucao = void 0;
