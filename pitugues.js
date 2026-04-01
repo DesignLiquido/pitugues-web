@@ -3947,6 +3947,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
                 const funcoesBuiltIn = [
                     'inteiro',
                     'real',
+                    'numero',
                     'número',
                     'texto',
                     'leia',
@@ -5092,7 +5093,10 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             case delegua_2.default.TEXTO:
                 const simboloNumeroTexto = this.avancarEDevolverAnterior();
                 const tipoInferido = (0, inferenciador_1.inferirTipoVariavel)(simboloNumeroTexto.literal);
-                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoInferido);
+                const delimitadorTexto = simboloNumeroTexto.tipo === delegua_2.default.TEXTO
+                    ? simboloNumeroTexto.delimitadorTexto
+                    : undefined;
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloNumeroTexto.linha), simboloNumeroTexto.literal, tipoInferido, delimitadorTexto);
             case delegua_2.default.PARA:
                 const simboloPara = this.avancarEDevolverAnterior();
                 return await this.paraComoConstruto(simboloPara);
@@ -7160,6 +7164,10 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                 const simboloDoc = this.avancarEDevolverAnterior();
                 docTopLevel = new construtos_1.ComentarioComoConstruto(simboloDoc);
             }
+            // Decoradores podem aparecer após um documentário.
+            while (this.verificarTipoSimboloAtual(delegua_2.default.ARROBA)) {
+                await this.resolverDecoradores();
+            }
             if (this.verificarTipoSimboloAtual(delegua_2.default.FUNCAO) ||
                 this.verificarTipoSimboloAtual(delegua_2.default.FUNÇÃO)) {
                 if (this.verificarTipoProximoSimbolo(delegua_2.default.DE)) {
@@ -7531,25 +7539,36 @@ exports.registrarPrimitiva = registrarPrimitiva;
 const declaracoes_1 = require("../declaracoes");
 const informacao_elemento_sintatico_1 = require("../informacao-elemento-sintatico");
 function* buscarRetornosEmBloco(construtoBloco) {
+    if (!(construtoBloco === null || construtoBloco === void 0 ? void 0 : construtoBloco.declaracoes))
+        return;
     for (const declaracao of construtoBloco.declaracoes) {
-        if (declaracao.constructor === declaracoes_1.Retorna) {
+        if ((declaracao === null || declaracao === void 0 ? void 0 : declaracao.constructor) === declaracoes_1.Retorna) {
             yield declaracao;
         }
     }
 }
 function* buscarRetornosEmSe(construtoSe) {
-    const blocoEntao = construtoSe.caminhoEntao;
-    for (const declaracao of buscarRetornosEmBloco(blocoEntao)) {
-        if (declaracao.constructor === declaracoes_1.Retorna) {
-            yield declaracao;
+    var _a;
+    if (((_a = construtoSe.caminhoEntao) === null || _a === void 0 ? void 0 : _a.constructor) === declaracoes_1.Retorna) {
+        yield construtoSe.caminhoEntao;
+    }
+    else {
+        const blocoEntao = construtoSe.caminhoEntao;
+        for (const declaracao of buscarRetornosEmBloco(blocoEntao)) {
+            if (declaracao.constructor === declaracoes_1.Retorna) {
+                yield declaracao;
+            }
         }
     }
     if (!construtoSe.caminhoSenao)
         return;
     switch (construtoSe.caminhoSenao.constructor) {
+        case declaracoes_1.Retorna:
+            yield construtoSe.caminhoSenao;
+            break;
         case declaracoes_1.Bloco:
             const blocoSenao = construtoSe.caminhoSenao;
-            for (const declaracao of blocoSenao.declaracoes) {
+            for (const declaracao of buscarRetornosEmBloco(blocoSenao)) {
                 if (declaracao.constructor === declaracoes_1.Retorna) {
                     yield declaracao;
                 }
@@ -11075,7 +11094,7 @@ class AvaliadorSintaticoPrisma extends avaliador_sintatico_base_1.AvaliadorSinta
     inicializarPilhaEscopos() {
         this.pilhaEscopos = new pilha_escopos_1.PilhaEscopos();
         this.pilhaEscopos.empilhar(new informacao_escopo_1.InformacaoEscopo());
-        // Registrar funções nativas (built-ins) do Prisma no escopo do parser
+        // Registrar funções nativas (embutidos) do Prisma no escopo do parser
         // para evitar erros de variável não definida durante análise semântica
         this.pilhaEscopos.definirInformacoesVariavel('tipo', new informacao_elemento_sintatico_1.InformacaoElementoSintatico('tipo', 'função', true, [
             new informacao_elemento_sintatico_1.InformacaoElementoSintatico('valor', 'qualquer'),
@@ -17101,11 +17120,12 @@ exports.ListaCompreensao = ListaCompreensao;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Literal = void 0;
 class Literal {
-    constructor(hashArquivo, linha, valor, tipo = 'qualquer') {
+    constructor(hashArquivo, linha, valor, tipo = 'qualquer', delimitadorTexto) {
         this.linha = linha;
         this.hashArquivo = hashArquivo;
         this.valor = valor;
         this.tipo = tipo;
+        this.delimitadorTexto = delimitadorTexto;
     }
     async aceitar(visitante) {
         return await visitante.visitarExpressaoLiteral(this);
@@ -19031,7 +19051,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./avaliador-sintatico-interface"), exports);
 __exportStar(require("./componente-modulo-classe-interface"), exports);
 __exportStar(require("./componente-modulo-funcao-interface"), exports);
-__exportStar(require("./estilizador-comum-interface"), exports);
+__exportStar(require("./estilizador/estilizador-interface"), exports);
 __exportStar(require("./formatador-comum-interface"), exports);
 __exportStar(require("./interpretador-com-depuracao-interface"), exports);
 __exportStar(require("./interpretador-interface"), exports);
@@ -19052,7 +19072,7 @@ __exportStar(require("./construtos"), exports);
 __exportStar(require("./erros"), exports);
 __exportStar(require("./retornos"), exports);
 
-},{"./avaliador-sintatico-interface":164,"./componente-modulo-classe-interface":165,"./componente-modulo-funcao-interface":166,"./construtos":167,"./erros":171,"./estilizador-comum-interface":172,"./formatador-comum-interface":173,"./interpretador-com-depuracao-interface":175,"./interpretador-interface":176,"./lexador-interface":177,"./modulo-interface":178,"./parametro-interface":179,"./pilha-interface":180,"./primitiva-interface":181,"./resolvedor-interface":182,"./resultado-parcial-interpretador-interface":183,"./retornos":184,"./retornos/retorno-execucao-interface":187,"./simbolo-interface":190,"./tradutor-interface":191,"./variavel-interface":192,"./visitante-comum-interface":193,"./visitante-delegua-interface":194}],175:[function(require,module,exports){
+},{"./avaliador-sintatico-interface":164,"./componente-modulo-classe-interface":165,"./componente-modulo-funcao-interface":166,"./construtos":167,"./erros":171,"./estilizador/estilizador-interface":172,"./formatador-comum-interface":173,"./interpretador-com-depuracao-interface":175,"./interpretador-interface":176,"./lexador-interface":177,"./modulo-interface":178,"./parametro-interface":179,"./pilha-interface":180,"./primitiva-interface":181,"./resolvedor-interface":182,"./resultado-parcial-interpretador-interface":183,"./retornos":184,"./retornos/retorno-execucao-interface":187,"./simbolo-interface":190,"./tradutor-interface":191,"./variavel-interface":192,"./visitante-comum-interface":193,"./visitante-delegua-interface":194}],175:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
@@ -30386,6 +30406,8 @@ class Lexador {
             if (caractere === delimitador) {
                 this.avancar();
                 this.adicionarSimbolo(delegua_1.default.TEXTO, valor);
+                const ultimoSimbolo = this.simbolos[this.simbolos.length - 1];
+                ultimoSimbolo.delimitadorTexto = delimitador;
                 return;
             }
             if (caractere === '\0' && this.eUltimaLinha()) {
@@ -31408,7 +31430,7 @@ exports.palavrasReservadasMicroGramatica = {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Simbolo = void 0;
 class Simbolo {
-    constructor(tipo, lexema, literal, linha, hashArquivo, colunaInicio = 0, colunaFim = 0) {
+    constructor(tipo, lexema, literal, linha, hashArquivo, colunaInicio = 0, colunaFim = 0, delimitadorTexto) {
         this.tipo = tipo;
         this.lexema = lexema;
         this.literal = literal;
@@ -31416,6 +31438,7 @@ class Simbolo {
         this.hashArquivo = hashArquivo;
         this.colunaInicio = colunaInicio;
         this.colunaFim = colunaFim;
+        this.delimitadorTexto = delimitadorTexto;
     }
     paraTexto() {
         return this.tipo + ' ' + this.lexema + ' ' + this.literal;
@@ -47546,7 +47569,7 @@ class TradutorAssemblyScript {
     }
     traduzirDeclaracaoTendoComo(declaracaoTendoComo) {
         // TendoComo is a resource management pattern (like try-with-resources in Java)
-        // AssemblyScript doesn't have built-in support, so we'll just treat it as a scope
+        // AssemblyScript doesn't have embutidos support, so we'll just treat it as a scope
         let resultado = `// tendo ${declaracaoTendoComo.simboloVariavel.lexema} como recurso\n`;
         resultado += ' '.repeat(this.indentacao);
         resultado += `let ${declaracaoTendoComo.simboloVariavel.lexema} = `;
@@ -48895,7 +48918,7 @@ class TradutorElixir {
         return Promise.resolve(`${objeto}.${metodo}`);
     }
     /**
-     * Mapeia métodos built-in de Delégua para Elixir
+     * Mapeia métodos embutidos de Delégua para Elixir
      */
     mapearMetodoBuiltIn(metodo, objeto, argumentos) {
         switch (metodo) {
@@ -49027,7 +49050,7 @@ class TradutorElixir {
             const acessoMetodo = expressao.entidadeChamada;
             const objeto = await acessoMetodo.objeto.aceitar(this);
             const metodo = this.converterIdentificador(acessoMetodo.nomeMetodo);
-            // Mapear métodos built-in
+            // Mapear métodos embutidos
             const metodoMapeado = this.mapearMetodoBuiltIn(metodo, objeto, argumentos);
             if (metodoMapeado) {
                 return Promise.resolve(metodoMapeado);
@@ -49039,7 +49062,7 @@ class TradutorElixir {
             const acesso = expressao.entidadeChamada;
             const objeto = await acesso.objeto.aceitar(this);
             const simbolo = this.converterIdentificador(acesso.simbolo.lexema);
-            // Mapear métodos built-in
+            // Mapear métodos embutidos
             const metodoMapeado = this.mapearMetodoBuiltIn(simbolo, objeto, argumentos);
             if (metodoMapeado) {
                 return Promise.resolve(metodoMapeado);
