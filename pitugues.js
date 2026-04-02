@@ -4437,6 +4437,13 @@ const comum_1 = __importDefault(require("../tipos-de-simbolos/comum"));
  * de tipos de símbolos comuns entre todos os dialetos.
  */
 class AvaliadorSintaticoBase {
+    constructor() {
+        this.simbolos = [];
+        this.erros = [];
+        this.hashArquivo = -1;
+        this.atual = 0;
+        this.blocos = 0;
+    }
     erro(simbolo, mensagemDeErro) {
         const excecao = new erro_avaliador_sintatico_1.ErroAvaliadorSintatico(simbolo, mensagemDeErro);
         return excecao;
@@ -4468,6 +4475,8 @@ class AvaliadorSintaticoBase {
         return this.simbolos[this.atual].tipo === tipo;
     }
     verificarTipoProximoSimbolo(tipo) {
+        if (this.atual + 1 >= this.simbolos.length)
+            return false;
         return this.simbolos[this.atual + 1].tipo === tipo;
     }
     estaNoFinal() {
@@ -4627,7 +4636,7 @@ class AvaliadorSintaticoBase {
             }
             const parametro = {};
             if (this.simbolos[this.atual].tipo === comum_1.default.MULTIPLICACAO) {
-                this.consumir(comum_1.default.MULTIPLICACAO, null);
+                this.avancarEDevolverAnterior();
                 parametro.abrangencia = 'multiplo';
             }
             else {
@@ -18219,6 +18228,9 @@ exports.Expressao = Expressao;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Extensao = void 0;
 const declaracao_1 = require("./declaracao");
+/**
+ * Declaração de Extensão de Classe.
+ */
 class Extensao extends declaracao_1.Declaracao {
     constructor(simboloTipo, metodos, ehGlobal, hashArquivo) {
         super(Number(simboloTipo.linha), hashArquivo);
