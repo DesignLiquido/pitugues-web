@@ -476,6 +476,37 @@ const contemComum = (nome) => {
     };
 };
 exports.default = {
+    mesclar: {
+        tipoRetorno: 'dicionário',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('outroDicionario', 'dicionário', true, [], 'Outro dicionário a ser mesclado com este dicionário.'),
+        ],
+        implementacao: (interpretador, valor, outroDicionario) => {
+            if (!outroDicionario ||
+                Array.isArray(outroDicionario) ||
+                outroDicionario.constructor !== Object) {
+                return Promise.reject(new Error('O argumento de dicionário.mesclar() deve ser um dicionário.'));
+            }
+            return Promise.resolve(Object.assign({}, valor, outroDicionario));
+        },
+        assinaturaFormato: 'dicionário.mesclar(outroDicionario: dicionário)',
+    },
+    // Compatibilidade retroativa com versões anteriores.
+    concatenar: {
+        tipoRetorno: 'dicionário',
+        argumentos: [
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('outroDicionario', 'dicionário', true, [], 'Outro dicionário a ser mesclado com este dicionário.'),
+        ],
+        implementacao: (interpretador, valor, outroDicionario) => {
+            if (!outroDicionario ||
+                Array.isArray(outroDicionario) ||
+                outroDicionario.constructor !== Object) {
+                return Promise.reject(new Error('O argumento de dicionário.mesclar() deve ser um dicionário.'));
+            }
+            return Promise.resolve(Object.assign({}, valor, outroDicionario));
+        },
+        assinaturaFormato: 'dicionário.concatenar(outroDicionario: dicionário)',
+    },
     chaves: {
         tipoRetorno: 'texto[]',
         argumentos: [],
@@ -3558,6 +3589,7 @@ exports.default = {
     PONTO_E_VIRGULA: 'PONTO_E_VIRGULA',
     QUEBRAR: 'QUEBRAR',
     RETORNA: 'RETORNA',
+    RETICENCIAS: 'RETICENCIAS',
     SUBTRACAO: 'SUBTRACAO',
     SE: 'SE',
     SENAO: 'SENAO',
