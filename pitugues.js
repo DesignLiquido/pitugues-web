@@ -3553,10 +3553,16 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
     }
     visitarChamadaPorVariavel(entidadeChamadaVariavel, argumentos) {
         const variavel = entidadeChamadaVariavel;
-        const funcaoChamada = this.gerenciadorEscopos.buscar(variavel.simbolo.lexema) ||
-            this.funcoes[variavel.simbolo.lexema];
+        const nomeFuncao = variavel.simbolo.lexema;
+        const funcoesNativas = ['inteiro', 'real', 'numero', 'número', 'texto', 'leia', 'escreva', 'tipo'];
+        const pareceSerClasse = nomeFuncao[0] === nomeFuncao[0].toUpperCase();
+        if (funcoesNativas.includes(nomeFuncao) || pareceSerClasse) {
+            return Promise.resolve();
+        }
+        const funcaoChamada = this.gerenciadorEscopos.buscar(nomeFuncao) ||
+            this.funcoes[nomeFuncao];
         if (!funcaoChamada) {
-            this.erro(entidadeChamadaVariavel.simbolo, `Chamada da função '${entidadeChamadaVariavel.simbolo.lexema}' não existe.`);
+            this.erro(entidadeChamadaVariavel.simbolo, `Chamada da função '${nomeFuncao}' não existe.`);
             return Promise.resolve();
         }
         const funcao = funcaoChamada.valor;
@@ -6133,6 +6139,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         const caminhoFazer = await this.declaracaoBloco();
         this.consumir(delegua_2.default.ENQUANTO, "Esperado declaração do 'enquanto' após o escopo do 'fazer'.");
         const condicaoEnquanto = await this.expressao();
+        this.verificarSeSimboloAtualEIgualA(delegua_2.default.PONTO_E_VIRGULA);
         return {
             caminhoFazer,
             condicaoEnquanto,
@@ -8935,6 +8942,37 @@ class AvaliadorSintaticoPitugues {
         }
         return false;
     }
+    /**
+     * Transforma uma string com interpolações (f-string) em código equivalente usando o método formatar.
+     * Exemplo: f"Olá {nome}, você tem {idade} anos" -> "Olá " + nome + " você tem " + idade + " anos"
+     * Com formatadores: f"{valor:.2f}" -> "" + "{:.2f}".formatar(valor) + ""
+     * Com depuração: f"{usuario=}" -> "" + "{usuario=}".formatar(usuario) + ""
+     */
+    transformarInterpolacaoEmFormatacao(conteudoOriginal) {
+        const ehDepuracao = (mioloLimpo) => {
+            return mioloLimpo.endsWith('=') && !/^(?:[!=<>]=|[<>])$/.test(mioloLimpo.slice(-2));
+        };
+        const processarParte = (_, miolo) => {
+            const mioloLimpo = miolo.trimEnd();
+            // Modo depuração: {expressao=}
+            if (ehDepuracao(mioloLimpo)) {
+                const expressao = mioloLimpo.slice(0, -1).trim();
+                return `" + "{${miolo}}".formatar(${expressao}) + "`;
+            }
+            // Modo formatação: {expressao:formato}
+            if (mioloLimpo.includes(':')) {
+                const [variavel, formato] = mioloLimpo
+                    .split(':')
+                    .map(s => s.trim());
+                if (variavel) {
+                    return `" + "{:${formato}}".formatar(${variavel}) + "`;
+                }
+            }
+            // Interpolação simples: {expressao}
+            return `" + (${miolo}) + "`;
+        };
+        return '"' + conteudoOriginal.replace(/\{(.*?)\}/g, processarParte) + '"';
+    }
     async primario() {
         const simboloAtual = this.simbolos[this.atual];
         switch (simboloAtual.tipo) {
@@ -9049,19 +9087,8 @@ class AvaliadorSintaticoPitugues {
             case pitugues_2.default.INTERPOLACAO:
                 const simboloInterpolacao = this.avancarEDevolverAnterior();
                 const conteudoOriginal = simboloInterpolacao.literal;
-                const codigoTransformado = '"' +
-                    conteudoOriginal.replace(/\{(.*?)\}/g, (_, miolo) => {
-                        // 'miolo' é o texto que estava dentro das chaves. Ex: "valor" ou "valor:.2f"
-                        if (miolo.includes(':')) {
-                            const [variavel, formato] = miolo.split(':').map((s) => s.trim());
-                            if (variavel !== '') {
-                                // Transforma {valor:.2f} em "{:.2f}".formatar(valor)
-                                return '" + "{:' + formato + '}".formatar(' + variavel + ') + "';
-                            }
-                        }
-                        return '" + (' + miolo.trim() + ') + "';
-                    }) +
-                    '"';
+                const codigoTransformado = this
+                    .transformarInterpolacaoEmFormatacao(conteudoOriginal);
                 const microLexador = new micro_lexador_pitugues_1.MicroLexadorPitugues();
                 const retornoMicroLexador = microLexador.mapear(codigoTransformado);
                 const microAvaliadorSintatico = new micro_avaliador_sintatico_pitugues_1.MicroAvaliadorSintaticoPitugues();
@@ -15023,26 +15050,122 @@ exports.default = {
     formatar: {
         tipoRetorno: 'texto',
         argumentos: [
-            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elemento', 'qualquer', true, [], 'O elemento a ser formatado.'),
+            new informacao_elemento_sintatico_1.InformacaoElementoSintatico('elementos', 'qualquer', true, [], 'Os elementos a serem formatados.'),
         ],
-        implementacao: (interpretador, mascara, elemento) => {
-            const valor = interpretador.resolverValor(elemento);
-            const matchMascara = mascara.match(/\{:(.*?)\}/);
-            if (matchMascara) {
-                const configuracao = matchMascara[1];
-                if (configuracao.includes('f') && typeof valor !== 'number') {
-                    return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(null, `Erro: Código de formato 'f' desconhecido para objeto do tipo '${typeof valor === 'string' ? 'texto' : typeof valor}'`, interpretador.linhaDeclaracaoAtual));
+        implementacao: async (interpretador, mascara, ...argumentos) => {
+            const extrairElementos = (args) => {
+                if (args.length !== 1)
+                    return args;
+                const primeiro = args[0];
+                if (Array.isArray(primeiro))
+                    return primeiro;
+                if (primeiro?.elementos)
+                    return primeiro.elementos;
+                if (primeiro?.valores)
+                    return primeiro.valores;
+                return args;
+            };
+            const aplicarAlinhamento = (texto, configuracao) => {
+                const match = configuracao.match(/^(.*?)([<>^])(\d+)$/);
+                if (!match)
+                    return texto;
+                const preenchimento = match[1] || ' ';
+                const alinhamento = match[2];
+                const largura = parseInt(match[3], 10);
+                if (texto.length >= largura)
+                    return texto;
+                switch (alinhamento) {
+                    case '<': return texto.padEnd(largura, preenchimento);
+                    case '>': return texto.padStart(largura, preenchimento);
+                    case '^': {
+                        const total = largura - texto.length;
+                        const esquerda = Math.floor(total / 2);
+                        const direita = total - esquerda;
+                        return preenchimento.repeat(esquerda) + texto + preenchimento.repeat(direita);
+                    }
+                    default: return texto;
                 }
-                if (typeof valor === 'number') {
-                    const matchCasas = configuracao.match(/\.(\d+)f/);
-                    const casas = matchCasas ? parseInt(matchCasas[1]) : 2;
-                    return Promise.resolve(mascara.replace(matchMascara[0], valor.toFixed(casas)));
+            };
+            const processarConfiguracaoNumerica = (valor, configuracao) => {
+                const formatadoresNumericos = ['f', '%', 'x', 'X', 'b'];
+                const ehNumerico = formatadoresNumericos
+                    .some(f => configuracao.includes(f))
+                    || /^0\d+$/.test(configuracao);
+                if (ehNumerico && typeof valor !== 'number') {
+                    const tipoExibido = typeof valor === 'string'
+                        ? 'texto'
+                        : typeof valor;
+                    throw new excecoes_1.ErroEmTempoDeExecucao(null, `Erro: Código de formato desconhecido para objeto do tipo '${tipoExibido}'.`, interpretador.linhaDeclaracaoAtual);
                 }
-            }
-            return Promise.resolve(mascara.replace(/\{.*?\}/, String(valor)));
+                if (typeof valor !== 'number')
+                    return String(valor);
+                // Bases
+                if (configuracao === 'x')
+                    return Math.trunc(valor).toString(16);
+                if (configuracao === 'X')
+                    return Math.trunc(valor).toString(16).toUpperCase();
+                if (configuracao === 'b')
+                    return Math.trunc(valor).toString(2);
+                // Zero padding (ex: 05)
+                const matchZero = configuracao.match(/^0(\d+)$/);
+                if (matchZero) {
+                    const largura = parseInt(matchZero[1], 10);
+                    const negativo = valor < 0;
+                    const strAbs = Math
+                        .abs(valor)
+                        .toString()
+                        .padStart(negativo ? largura - 1 : largura, '0');
+                    return negativo ? `-${strAbs}` : strAbs;
+                }
+                // Casas decimais / percentual (ex: .2f, .1%)
+                const matchCasas = configuracao.match(/\.(\d+)([f%])/);
+                if (matchCasas) {
+                    const casas = parseInt(matchCasas[1], 10);
+                    const tipo = matchCasas[2];
+                    let numero = tipo === '%' ? valor * 100 : valor;
+                    let formatado = numero.toFixed(casas);
+                    if (configuracao.includes(',')) {
+                        const [inteiro, decimal] = formatado.split('.');
+                        formatado = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimal ? '.' + decimal : '');
+                    }
+                    return tipo === '%' ? `${formatado}%` : formatado;
+                }
+                // Padrão: duas casas decimais
+                return valor.toFixed(2);
+            };
+            const ehMascaraDepuracao = (miolo) => {
+                return miolo.endsWith('=') && !/^(?:[!=<>]=|[<>])$/.test(miolo.slice(-2));
+            };
+            const elementos = extrairElementos(argumentos);
+            let indice = 0;
+            return mascara.replace(/\{([^}]*)\}/g, (matchLiteral, miolo) => {
+                if (indice >= elementos.length)
+                    return matchLiteral;
+                const valor = interpretador.resolverValor(elementos[indice]);
+                const mioloLimpo = miolo.trimEnd();
+                let resultado;
+                if (mioloLimpo.startsWith(':')) {
+                    const configuracao = mioloLimpo.substring(1);
+                    const ehAlinhamento = /^(.*?)([<>^])(\d+)$/.test(configuracao);
+                    resultado = ehAlinhamento
+                        ? aplicarAlinhamento(String(valor), configuracao)
+                        : processarConfiguracaoNumerica(valor, configuracao);
+                }
+                else if (ehMascaraDepuracao(mioloLimpo)) {
+                    const representacao = (typeof valor === 'string')
+                        ? `'${valor}'`
+                        : String(valor);
+                    resultado = miolo + representacao;
+                }
+                else {
+                    resultado = String(valor);
+                }
+                indice++;
+                return resultado;
+            });
         },
-        assinaturaFormato: 'texto.formatar(elemento: qualquer)',
-        documentacao: '# `texto.formatar(valor)` \n\n Formata um valor com base na máscara de texto.',
+        assinaturaFormato: 'texto.formatar(...elementos: qualquer)',
+        documentacao: '# `texto.formatar(...valores)` \n\n Formata valores com base na máscara de texto.',
         exemploCodigo: '"{:.2f}".formatar(1.2345)',
     },
     inclui: {
