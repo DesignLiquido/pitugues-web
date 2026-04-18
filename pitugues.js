@@ -4826,6 +4826,7 @@ const informacao_elemento_sintatico_1 = require("../informacao-elemento-sintatic
 const comum_1 = require("./comum");
 const montao_tipos_1 = require("./montao-tipos");
 const elemento_montao_tipos_1 = require("./elemento-montao-tipos");
+const simbolo_1 = require("../lexador/simbolo");
 const delegua_1 = __importDefault(require("../tipos-de-dados/delegua"));
 const delegua_2 = __importDefault(require("../tipos-de-simbolos/delegua"));
 const primitivas_dicionario_1 = __importDefault(require("../bibliotecas/primitivas-dicionario"));
@@ -4883,7 +4884,16 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
     verificarDefinicaoTipoAtual() {
         const tipos = [...Object.values(delegua_1.default)];
         if (this.simbolos[this.atual].lexema in this.tiposDefinidosEmCodigo) {
-            return this.simbolos[this.atual].lexema;
+            const nomeBase = this.simbolos[this.atual].lexema;
+            if (this.verificarTipoProximoSimbolo(delegua_2.default.COLCHETE_ESQUERDO)) {
+                this.avancarEDevolverAnterior(); // avança do tipo para '['
+                if (!this.verificarTipoProximoSimbolo(delegua_2.default.COLCHETE_DIREITO)) {
+                    throw this.erro(this.simbolos[this.atual], `Esperado símbolo de fechamento do vetor: ']'. Atual: ${this.simbolos[this.atual].lexema}`);
+                }
+                this.avancarEDevolverAnterior(); // avança de '[' para ']'
+                return `${nomeBase}[]`;
+            }
+            return nomeBase;
         }
         if (this.simbolos[this.atual].lexema in this.interfacesDeclaradas) {
             return this.simbolos[this.atual].lexema;
@@ -4984,6 +4994,9 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             case delegua_2.default.EXTENSAO:
                 this.avancarEDevolverAnterior();
                 return new construtos_1.Literal(this.hashArquivo, Number(simboloAtual.linha), 'extensao', 'texto');
+            case delegua_2.default.ASSERCAO:
+                this.avancarEDevolverAnterior();
+                return new construtos_1.Literal(this.hashArquivo, Number(simboloAtual.linha), 'assercao', 'texto');
             default:
                 return undefined;
         }
@@ -6134,6 +6147,38 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         const simboloFalha = this.simbolos[this.atual - 1];
         const expressaoFalha = await this.expressao();
         return new declaracoes_1.Falhar(simboloFalha, expressaoFalha);
+    }
+    async declaracaoAssercao() {
+        const simboloAssercao = this.simbolos[this.atual - 1];
+        let condicao;
+        let mensagemFalha;
+        if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.PARENTESE_ESQUERDO)) {
+            condicao = await this.expressao();
+            if (this.verificarTipoSimboloAtual(delegua_2.default.VIRGULA)) {
+                this.avancarEDevolverAnterior();
+                mensagemFalha = await this.expressao();
+                if (this.verificarTipoSimboloAtual(delegua_2.default.VIRGULA)) {
+                    throw this.erro(this.simbolos[this.atual], "'asserção' aceita apenas condição obrigatória e mensagem opcional.");
+                }
+            }
+            else {
+                mensagemFalha = new construtos_1.Literal(simboloAssercao.hashArquivo, Number(simboloAssercao.linha), 'A asserção falhou.', 'texto', "'");
+            }
+            this.consumir(delegua_2.default.PARENTESE_DIREITO, "Esperado ')' após argumentos de 'asserção'.");
+        }
+        else {
+            condicao = await this.expressao();
+            if (this.verificarTipoSimboloAtual(delegua_2.default.VIRGULA)) {
+                throw this.erro(this.simbolos[this.atual], "Mensagem em 'asserção' exige uso de parênteses.");
+            }
+            mensagemFalha = new construtos_1.Literal(simboloAssercao.hashArquivo, Number(simboloAssercao.linha), 'A asserção falhou.', 'texto', "'");
+        }
+        this.verificarSeSimboloAtualEIgualA(delegua_2.default.PONTO_E_VIRGULA);
+        const simboloNao = new simbolo_1.Simbolo(delegua_2.default.NEGACAO, 'nao', null, Number(simboloAssercao.linha), simboloAssercao.hashArquivo, simboloAssercao.colunaInicio, simboloAssercao.colunaFim);
+        const condicaoNegada = new construtos_1.Unario(simboloAssercao.hashArquivo, simboloNao, condicao, 'ANTES');
+        const declaracaoFalhar = new declaracoes_1.Falhar(simboloAssercao, mensagemFalha);
+        const blocoFalha = new declaracoes_1.Bloco(simboloAssercao.hashArquivo, Number(simboloAssercao.linha), [declaracaoFalhar]);
+        return new declaracoes_1.Se(condicaoNegada, blocoFalha);
     }
     async logicaComumFazer() {
         const caminhoFazer = await this.declaracaoBloco();
@@ -7408,14 +7453,14 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
     }
     /**
      * Usado quando há erros na avaliação sintática.
-     * Garante que o código não entre em _loop_ infinito.
+     * Garante que o avaliador sintático não entre em _loop_ infinito.
      * @returns Sempre retorna `void`.
      */
     sincronizar() {
         this.avancarEDevolverAnterior(); // avança além do token com erro
         while (!this.estaNoFinal()) {
             // Um ponto-e-vírgula já consumido indica fronteira limpa entre declarações.
-            if (this.simbolos[this.atual - 1].tipo === delegua_2.default.PONTO_E_VIRGULA)
+            if (this.simbolos[this.atual].tipo === delegua_2.default.PONTO_E_VIRGULA)
                 return;
             // Uma palavra-chave de início de declaração ou fecha-chave à frente:
             // retorna SEM consumir o token, para que o chamador o analise normalmente.
@@ -7447,6 +7492,9 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         switch (this.simbolos[this.atual].tipo) {
             case delegua_2.default.AJUDA:
                 return await this.declaracaoAjuda();
+            case delegua_2.default.ASSERCAO:
+                this.avancarEDevolverAnterior();
+                return await this.declaracaoAssercao();
             case delegua_2.default.CHAVE_ESQUERDA:
                 return await this.declaracaoBloco();
             case delegua_2.default.COMENTARIO:
@@ -7735,7 +7783,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
 }
 exports.AvaliadorSintatico = AvaliadorSintatico;
 
-},{"../bibliotecas/primitivas-dicionario":75,"../bibliotecas/primitivas-numero":76,"../bibliotecas/primitivas-texto":77,"../bibliotecas/primitivas-vetor":78,"../construtos":108,"../construtos/tuplas":126,"../declaracoes":156,"../inferenciador":173,"../informacao-elemento-sintatico":174,"../tipos-de-dados/delegua":262,"../tipos-de-simbolos/delegua":267,"./avaliador-sintatico-base":51,"./comum":53,"./elemento-montao-tipos":61,"./erro-avaliador-sintatico":62,"./informacao-escopo":64,"./montao-tipos":67,"./pilha-escopos":68,"browser-process-hrtime":477}],53:[function(require,module,exports){
+},{"../bibliotecas/primitivas-dicionario":75,"../bibliotecas/primitivas-numero":76,"../bibliotecas/primitivas-texto":77,"../bibliotecas/primitivas-vetor":78,"../construtos":108,"../construtos/tuplas":126,"../declaracoes":156,"../inferenciador":173,"../informacao-elemento-sintatico":174,"../lexador/simbolo":260,"../tipos-de-dados/delegua":262,"../tipos-de-simbolos/delegua":267,"./avaliador-sintatico-base":51,"./comum":53,"./elemento-montao-tipos":61,"./erro-avaliador-sintatico":62,"./informacao-escopo":64,"./montao-tipos":67,"./pilha-escopos":68,"browser-process-hrtime":477}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buscarRetornos = buscarRetornos;
@@ -20138,6 +20186,19 @@ function obterAjudaTemaClasse(chave) {
                 `\tvar s = "olá"\n` +
                 `\tescreva(s.gritarMaiusculas())  // OLÁ!!!\n\n` +
                 `Ver também: 'classe'.`);
+        case 'assercao':
+            return (`A instrução 'asserção' valida uma condição em tempo de execução.\n` +
+                `Se condição for falsa, execução falha com erro.\n\n` +
+                `Sintaxe:\n` +
+                `\tasserção condicao\n` +
+                `\tasserção(condicao)\n` +
+                `\tasserção(condicao, "mensagem de erro")\n\n` +
+                `Exemplo:\n` +
+                `\tvar idade = 20\n` +
+                `\tasserção idade >= 18\n` +
+                `\tasserção(idade >= 18, "idade precisa ser maior de idade")\n\n` +
+                `Internamente, primeira implementação usa fluxo equivalente a 'se' + 'falhar'.\n\n` +
+                `Ver também: 'falhar'.`);
         default:
             return `Desculpe, não há documentação disponível para o tópico '${chave}' no momento.`;
     }
@@ -32412,6 +32473,8 @@ const delegua_1 = __importDefault(require("../tipos-de-simbolos/delegua"));
 exports.palavrasReservadasDelegua = {
     abstrata: delegua_1.default.ABSTRATO,
     abstrato: delegua_1.default.ABSTRATO,
+    assercao: delegua_1.default.ASSERCAO,
+    asserção: delegua_1.default.ASSERCAO,
     ajuda: delegua_1.default.AJUDA,
     cada: delegua_1.default.CADA,
     caso: delegua_1.default.CASO,
@@ -32733,6 +32796,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
     ADICAO: 'ADICAO',
+    ASSERCAO: 'ASSERCAO',
     ABSTRATO: 'ABSTRATO',
     AJUDA: 'AJUDA',
     ARROBA: 'ARROBA',
