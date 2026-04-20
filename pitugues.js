@@ -3398,6 +3398,41 @@ const micro_lexador_pitugues_1 = require("../../lexador/micro-lexador-pitugues")
 const analisador_semantico_base_1 = require("../analisador-semantico-base");
 const gerenciador_escopos_1 = require("../gerenciador-escopos");
 const pilha_variaveis_1 = require("../pilha-variaveis");
+const FUNCOES_NATIVAS_PITUGUES = [
+    'aleatorio',
+    'aleatorio_entre',
+    'algum',
+    'arredondar',
+    'encontrar',
+    'encontrar_indice',
+    'encontrar_ultimo',
+    'encontrar_ultimo_indice',
+    'filtrar_por',
+    'incluido',
+    'inteiro',
+    'intervalo',
+    'enumerar',
+    'mapear',
+    'maximo',
+    'minimo',
+    'numero',
+    'número',
+    'ordenar',
+    'para_cada',
+    'primeiro_em_condicao',
+    'real',
+    'reduzir',
+    'somar',
+    'tamanho',
+    'texto',
+    'todos',
+    'todos_em_condicao',
+    'tupla',
+    'vetor',
+    'leia',
+    'escreva',
+    'tipo',
+];
 /**
  * O Analisador Semântico de Pituguês.
  */
@@ -3554,7 +3589,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
     visitarChamadaPorVariavel(entidadeChamadaVariavel, argumentos) {
         const variavel = entidadeChamadaVariavel;
         const nomeFuncao = variavel.simbolo.lexema;
-        const funcoesNativas = ['inteiro', 'real', 'numero', 'número', 'texto', 'leia', 'escreva', 'tipo'];
+        const funcoesNativas = FUNCOES_NATIVAS_PITUGUES;
         const pareceSerClasse = nomeFuncao[0] === nomeFuncao[0].toUpperCase();
         if (funcoesNativas.includes(nomeFuncao) || pareceSerClasse) {
             return Promise.resolve();
@@ -4069,16 +4104,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
             case construtos_1.Variavel:
                 let entidadeChamadaVariavel = chamada.entidadeChamada;
                 const nomeFuncao = entidadeChamadaVariavel.simbolo.lexema;
-                const funcoesBuiltIn = [
-                    'inteiro',
-                    'real',
-                    'numero',
-                    'número',
-                    'texto',
-                    'leia',
-                    'escreva',
-                    'tipo',
-                ];
+                const funcoesBuiltIn = FUNCOES_NATIVAS_PITUGUES;
                 const pareceSerClasse = nomeFuncao[0] === nomeFuncao[0].toUpperCase();
                 if (!funcoesBuiltIn.includes(nomeFuncao) &&
                     !pareceSerClasse &&
@@ -8046,7 +8072,7 @@ class AvaliadorSintaticoEguaClassico {
         if (this.verificarSeSimboloAtualEIgualA(egua_classico_1.default.NULO))
             return new construtos_1.Literal(this.hashArquivo, 0, null);
         if (this.verificarSeSimboloAtualEIgualA(egua_classico_1.default.ISTO))
-            return new construtos_1.Isto(this.hashArquivo, Number(this.simboloAnterior()));
+            return new construtos_1.Isto(this.hashArquivo, Number(this.simboloAnterior().linha), this.simboloAnterior());
         if (this.verificarSeSimboloAtualEIgualA(egua_classico_1.default.NUMERO, egua_classico_1.default.TEXTO)) {
             return new construtos_1.Literal(this.hashArquivo, 0, this.simboloAnterior().literal);
         }
@@ -47054,7 +47080,12 @@ ${labelFuncao}:
     }
     traduzirConstrutoLiteral(construto) {
         if (typeof construto.valor === 'string') {
-            return this.criaStringLiteral(construto);
+            return this.criarStringLiteral(construto);
+        }
+        if (typeof construto.valor === 'number' &&
+            Number.isFinite(construto.valor) &&
+            !Number.isInteger(construto.valor)) {
+            return this.criarLiteralPontoFlutuante(construto.valor);
         }
         return String(construto.valor);
     }
@@ -47186,7 +47217,10 @@ ${labelProximo}:`;
     traduzirDeclaracaoExpressao(declaracao) {
         if (declaracao.expressao &&
             this.dicionarioConstrutos[declaracao.expressao.constructor.name]) {
-            this.dicionarioConstrutos[declaracao.expressao.constructor.name](declaracao.expressao);
+            const resultado = this.dicionarioConstrutos[declaracao.expressao.constructor.name](declaracao.expressao);
+            if (typeof resultado === 'string' && resultado && resultado !== 'a0') {
+                this.emitirCarga('a0', resultado);
+            }
         }
     }
     traduzirDeclaracaoFazer(declaracao) {
@@ -47400,19 +47434,24 @@ ${labelSenao}:`;
             }
         }
     }
-    criaStringLiteral(literal) {
+    criarStringLiteral(literal) {
         const varLiteral = `Delegua_${this.gerarDigitoAleatorio()}`;
         this.data += `    ${varLiteral}: .asciz "${literal.valor}"\n`;
         return varLiteral;
     }
-    criaTamanhoNaMemoriaReferenteAVar(nomeStringLiteral) {
+    criarLiteralPontoFlutuante(valor) {
+        const varLiteral = `Delegua_${this.gerarDigitoAleatorio()}`;
+        this.data += `    ${varLiteral}: .double ${valor}\n`;
+        return varLiteral;
+    }
+    criarTamanhoNaMemoriaReferenteAVar(nomeStringLiteral) {
         return `tam_${nomeStringLiteral}`;
     }
     traduzirDeclaracaoEscreva(declaracaoEscreva) {
         let nomeStringLiteral = '';
         let tamanhoString = '';
         if (declaracaoEscreva.argumentos[0] instanceof construtos_1.Literal) {
-            nomeStringLiteral = this.criaStringLiteral(declaracaoEscreva.argumentos[0]);
+            nomeStringLiteral = this.criarStringLiteral(declaracaoEscreva.argumentos[0]);
             const stringValue = declaracaoEscreva.argumentos[0].valor;
             tamanhoString = String(stringValue.length);
         }
@@ -48234,7 +48273,7 @@ class TradutorAssemblyScript {
         this.dicionarioConstrutos = {
             AcessoIndiceVariavel: this.traduzirConstrutoAcessoIndiceVariavel.bind(this),
             AcessoMetodo: this.traduzirConstrutoAcessoMetodo.bind(this),
-            AcessoMetodoOuPropriedade: this.traduzirConstrutoAcessoMetodo.bind(this),
+            AcessoMetodoOuPropriedade: this.traduzirConstrutoAcessoMetodoOuPropriedade.bind(this),
             AcessoPropriedade: this.traduzirConstrutoAcessoPropriedade.bind(this),
             Agrupamento: this.traduzirConstrutoAgrupamento.bind(this),
             ArgumentoReferenciaFuncao: this.traduzirConstrutoArgumentoReferenciaFuncao.bind(this),
@@ -48437,7 +48476,7 @@ class TradutorAssemblyScript {
             case 'aleatorio':
                 return `Math.random()`;
             case 'aleatorioEntre':
-            case 'aleatorioente':
+            case 'aleatorioentre':
                 if (argumentos.length >= 2) {
                     return `(Math.random() * (${argumentos[1]} - ${argumentos[0]}) + ${argumentos[0]})`;
                 }
@@ -49335,11 +49374,20 @@ class TradutorAssemblyScript {
         return resultado;
     }
     traduzirConstrutoAcessoMetodo(acessoMetodo) {
+        const nomeMetodo = acessoMetodo.nomeMetodo;
         if (acessoMetodo.objeto instanceof construtos_1.Variavel) {
             let objetoVariavel = acessoMetodo.objeto;
-            return `${objetoVariavel.simbolo.lexema}.${this.traduzirFuncoesNativas(acessoMetodo.simbolo.lexema)}`;
+            return `${objetoVariavel.simbolo.lexema}.${this.traduzirFuncoesNativas(nomeMetodo)}`;
         }
-        return `this.${acessoMetodo.simbolo.lexema}`;
+        return `this.${nomeMetodo}`;
+    }
+    traduzirConstrutoAcessoMetodoOuPropriedade(acessoMetodoOuPropriedade) {
+        const nomeMetodo = acessoMetodoOuPropriedade.simbolo?.lexema;
+        if (acessoMetodoOuPropriedade.objeto instanceof construtos_1.Variavel) {
+            let objetoVariavel = acessoMetodoOuPropriedade.objeto;
+            return `${objetoVariavel.simbolo.lexema}.${this.traduzirFuncoesNativas(nomeMetodo)}`;
+        }
+        return `this.${nomeMetodo}`;
     }
     traduzirConstrutoAcessoIndiceVariavel(acessoIndiceVariavel) {
         let resultado = '';
