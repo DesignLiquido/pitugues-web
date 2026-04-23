@@ -3594,8 +3594,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
         if (funcoesNativas.includes(nomeFuncao) || pareceSerClasse) {
             return Promise.resolve();
         }
-        const funcaoChamada = this.gerenciadorEscopos.buscar(nomeFuncao) ||
-            this.funcoes[nomeFuncao];
+        const funcaoChamada = this.gerenciadorEscopos.buscar(nomeFuncao) || this.funcoes[nomeFuncao];
         if (!funcaoChamada) {
             this.erro(entidadeChamadaVariavel.simbolo, `Chamada da função '${nomeFuncao}' não existe.`);
             return Promise.resolve();
@@ -3790,7 +3789,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
                         inicializada: true,
                         usada: false,
                         hashArquivo: declaracao.hashArquivo,
-                        linha: declaracao.linha
+                        linha: declaracao.linha,
                     });
                 }
                 else if (declaracao.variavelIteracao instanceof construtos_1.Dupla) {
@@ -3807,7 +3806,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
                             inicializada: true,
                             usada: false,
                             hashArquivo: declaracao.hashArquivo,
-                            linha: declaracao.linha
+                            linha: declaracao.linha,
                         });
                     }
                     if (segundaVariavel instanceof construtos_1.Variavel) {
@@ -3820,7 +3819,7 @@ class AnalisadorSemanticoPitugues extends analisador_semantico_base_1.Analisador
                             inicializada: true,
                             usada: false,
                             hashArquivo: declaracao.hashArquivo,
-                            linha: declaracao.linha
+                            linha: declaracao.linha,
                         });
                     }
                 }
@@ -5399,7 +5398,8 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                                 construto = new construtos_1.AcessoMetodo(construtoTipado.hashArquivo, construtoTipado.objeto, construtoTipado.simbolo.lexema, primitivaVetorSelecionada.tipoRetorno);
                                 break;
                             default:
-                                if (construtoTipado.tipo && construtoTipado.tipo in this.tiposDefinidosEmCodigo) {
+                                if (construtoTipado.tipo &&
+                                    construtoTipado.tipo in this.tiposDefinidosEmCodigo) {
                                     const tipoCorrespondente = this.tiposDefinidosEmCodigo[construtoTipado.tipo];
                                     const possivelMetodo = tipoCorrespondente.metodos.filter((m) => m.simbolo.lexema === construtoTipado.simbolo.lexema);
                                     if (possivelMetodo.length > 0) {
@@ -6130,7 +6130,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                     this.consumir(delegua_2.default.DOIS_PONTOS, "Esperado ':' após declaração do 'padrao'.");
                     const declaracoes = [];
                     do {
-                        declaracoes.push(await this.resolverDeclaracao());
+                        declaracoes.push((await this.resolverDeclaracao()));
                     } while (!this.verificarTipoSimboloAtual(delegua_2.default.CASO) &&
                         !this.verificarTipoSimboloAtual(delegua_2.default.PADRAO) &&
                         !this.verificarTipoSimboloAtual(delegua_2.default.CHAVE_DIREITA));
@@ -6203,7 +6203,9 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         const simboloNao = new simbolo_1.Simbolo(delegua_2.default.NEGACAO, 'nao', null, Number(simboloAssercao.linha), simboloAssercao.hashArquivo, simboloAssercao.colunaInicio, simboloAssercao.colunaFim);
         const condicaoNegada = new construtos_1.Unario(simboloAssercao.hashArquivo, simboloNao, condicao, 'ANTES');
         const declaracaoFalhar = new declaracoes_1.Falhar(simboloAssercao, mensagemFalha);
-        const blocoFalha = new declaracoes_1.Bloco(simboloAssercao.hashArquivo, Number(simboloAssercao.linha), [declaracaoFalhar]);
+        const blocoFalha = new declaracoes_1.Bloco(simboloAssercao.hashArquivo, Number(simboloAssercao.linha), [
+            declaracaoFalhar,
+        ]);
         return new declaracoes_1.Se(condicaoNegada, blocoFalha);
     }
     async logicaComumFazer() {
@@ -6263,7 +6265,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                 construtoCaminhoModulo = new construtos_1.Literal(identificadorModulo.hashArquivo, Number(identificadorModulo.linha), identificadorModulo.lexema);
                 break;
             default:
-                throw this.erro(this.simbolos[this.atual], "Esperado caminho do módulo como texto ou identificador em declaração de importação.");
+                throw this.erro(this.simbolos[this.atual], 'Esperado caminho do módulo como texto ou identificador em declaração de importação.');
         }
         const importar = new declaracoes_1.Importar(construtoCaminhoModulo);
         if (identificadorDeTudo !== null) {
@@ -6436,7 +6438,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         const caminhoEntao = (await this.resolverDeclaracao());
         let caminhoSenao = undefined;
         if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.SENAO, delegua_2.default.SENÃO)) {
-            caminhoSenao = await this.resolverDeclaracao();
+            caminhoSenao = (await this.resolverDeclaracao());
         }
         return new declaracoes_1.Se(condicao, caminhoEntao, [], caminhoSenao);
     }
@@ -6571,11 +6573,11 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                 const classeDefinida = this.tiposDefinidosEmCodigo[tipoObjeto];
                 if (classeDefinida instanceof declaracoes_1.Classe) {
                     const nomeMembro = entidadeChamada.simbolo.lexema;
-                    const metodo = classeDefinida.metodos?.find(m => m.simbolo.lexema === nomeMembro);
+                    const metodo = classeDefinida.metodos?.find((m) => m.simbolo.lexema === nomeMembro);
                     if (metodo) {
                         return metodo.tipo || 'qualquer';
                     }
-                    const propriedade = classeDefinida.propriedades?.find(p => p.nome.lexema === nomeMembro);
+                    const propriedade = classeDefinida.propriedades?.find((p) => p.nome.lexema === nomeMembro);
                     if (propriedade) {
                         return propriedade.tipo || 'qualquer';
                     }
@@ -6601,7 +6603,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         if (entidadeChamada.objeto instanceof construtos_1.Isto) {
             if (this.metodosClasseAtualEmAnalise) {
                 const nomeMembro = entidadeChamada.simbolo.lexema;
-                const metodo = this.metodosClasseAtualEmAnalise.find(m => m.simbolo.lexema === nomeMembro);
+                const metodo = this.metodosClasseAtualEmAnalise.find((m) => m.simbolo.lexema === nomeMembro);
                 if (metodo) {
                     return metodo.tipo || 'qualquer';
                 }
@@ -6750,7 +6752,8 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         }
         for (let [indice, identificador] of identificadores.entries()) {
             const tipoOriginal = tipo; // Preserva o tipo antes da inferência
-            tipo = this.logicaComumInferenciaTiposVariaveisEConstantes(inicializadores[indice], tipo) ?? tipo;
+            tipo =
+                this.logicaComumInferenciaTiposVariaveisEConstantes(inicializadores[indice], tipo) ?? tipo;
             if (tipo !== 'dicionário') {
                 this.pilhaEscopos.definirInformacoesVariavel(identificador.lexema, new informacao_elemento_sintatico_1.InformacaoElementoSintatico(identificador.lexema, tipo));
             }
@@ -6818,7 +6821,8 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         let retorno = [];
         for (let [indice, identificador] of identificadores.entries()) {
             // Se tipo ainda não foi definido, infere.
-            tipo = this.logicaComumInferenciaTiposVariaveisEConstantes(inicializadores[indice], tipo) ?? tipo;
+            tipo =
+                this.logicaComumInferenciaTiposVariaveisEConstantes(inicializadores[indice], tipo) ?? tipo;
             if (tipo !== 'dicionário') {
                 this.pilhaEscopos.definirInformacoesVariavel(identificador.lexema, new informacao_elemento_sintatico_1.InformacaoElementoSintatico(identificador.lexema, tipo));
             }
@@ -7127,7 +7131,8 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                         this.erros.push(erro);
                     }
                     if (this.erros.length > quantidadeErrosAntesCorpoOp) {
-                        this.atual = this.encontrarIndiceAposFechamentoDeBloco(indiceAberturaCorpoOp);
+                        this.atual =
+                            this.encontrarIndiceAposFechamentoDeBloco(indiceAberturaCorpoOp);
                         corpoOp = [];
                         this.verificarSeSimboloAtualEIgualA(delegua_2.default.PONTO_E_VIRGULA);
                     }
@@ -7165,7 +7170,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                         // Método de classe estrangeira não pode ter corpo.
                         if (ehEstrangeira &&
                             this.verificarTipoSimboloAtual(delegua_2.default.CHAVE_ESQUERDA)) {
-                            throw this.erro(this.simbolos[this.atual], "Métodos de classe estrangeira não podem ter corpo.");
+                            throw this.erro(this.simbolos[this.atual], 'Métodos de classe estrangeira não podem ter corpo.');
                         }
                         // Método é abstrato quando: (a) está dentro de um bloco `abstrato {}`,
                         // ou (b) a classe é abstrata/estrangeira e o próximo token não é `{`.
@@ -7198,7 +7203,8 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                                 this.erros.push(erro);
                             }
                             if (this.erros.length > quantidadeErrosAntesCorpo) {
-                                this.atual = this.encontrarIndiceAposFechamentoDeBloco(indiceAberturaCorpo);
+                                this.atual =
+                                    this.encontrarIndiceAposFechamentoDeBloco(indiceAberturaCorpo);
                                 corpo = [];
                                 this.verificarSeSimboloAtualEIgualA(delegua_2.default.PONTO_E_VIRGULA);
                             }
@@ -7276,8 +7282,7 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                                         catch (erro) {
                                             this.erros.push(erro);
                                         }
-                                        if (this.erros.length >
-                                            quantidadeErrosAntesCorpoAcessor) {
+                                        if (this.erros.length > quantidadeErrosAntesCorpoAcessor) {
                                             this.atual = this.encontrarIndiceAposFechamentoDeBloco(indiceAberturaCorpoAcessor);
                                             corpoAcessor = [];
                                             this.verificarSeSimboloAtualEIgualA(delegua_2.default.PONTO_E_VIRGULA);
@@ -9123,9 +9128,7 @@ class AvaliadorSintaticoPitugues {
             }
             // Modo formatação: {expressao:formato}
             if (mioloLimpo.includes(':')) {
-                const [variavel, formato] = mioloLimpo
-                    .split(':')
-                    .map(s => s.trim());
+                const [variavel, formato] = mioloLimpo.split(':').map((s) => s.trim());
                 if (variavel) {
                     return `" + "{:${formato}}".formatar(${variavel}) + "`;
                 }
@@ -9249,8 +9252,7 @@ class AvaliadorSintaticoPitugues {
             case pitugues_2.default.INTERPOLACAO:
                 const simboloInterpolacao = this.avancarEDevolverAnterior();
                 const conteudoOriginal = simboloInterpolacao.literal;
-                const codigoTransformado = this
-                    .transformarInterpolacaoEmFormatacao(conteudoOriginal);
+                const codigoTransformado = this.transformarInterpolacaoEmFormatacao(conteudoOriginal);
                 const microLexador = new micro_lexador_pitugues_1.MicroLexadorPitugues();
                 const retornoMicroLexador = microLexador.mapear(codigoTransformado);
                 const microAvaliadorSintatico = new micro_avaliador_sintatico_pitugues_1.MicroAvaliadorSintaticoPitugues();
@@ -10775,7 +10777,10 @@ class AvaliadorSintaticoPortugolIpt extends avaliador_sintatico_base_1.Avaliador
             else if (this.verificarSeSimboloAtualEIgualA(portugol_ipt_1.default.DEFEITO)) {
                 this.consumir(portugol_ipt_1.default.DOIS_PONTOS, "Esperado ':' após 'defeito'.");
                 this.consumirQuebrasLinha();
-                const bloco = await this.resolverBloco([portugol_ipt_1.default.FIMESCOLHE, portugol_ipt_1.default.FIM]);
+                const bloco = await this.resolverBloco([
+                    portugol_ipt_1.default.FIMESCOLHE,
+                    portugol_ipt_1.default.FIM,
+                ]);
                 caminhoPadrao = { condicoes: [], declaracoes: bloco.declaracoes };
             }
             else {
@@ -11504,11 +11509,7 @@ class AvaliadorSintaticoPrisma extends avaliador_sintatico_base_1.AvaliadorSinta
         const simboloTente = this.simboloAnterior();
         const blocoTente = [];
         while (!this.estaNoFinal() &&
-            ![
-                prisma_1.default.PEGUE,
-                prisma_1.default.FINALMENTE,
-                prisma_1.default.FIM,
-            ].includes(this.simbolos[this.atual].tipo)) {
+            ![prisma_1.default.PEGUE, prisma_1.default.FINALMENTE, prisma_1.default.FIM].includes(this.simbolos[this.atual].tipo)) {
             blocoTente.push(await this.resolverDeclaracaoForaDeBloco());
         }
         let blocoPegue = null;
@@ -11776,7 +11777,8 @@ class AvaliadorSintaticoPrisma extends avaliador_sintatico_base_1.AvaliadorSinta
         this.consumir(prisma_1.default.PARENTESE_DIREITO, "Esperado ')' após parâmetros.");
         this.consumir(prisma_1.default.CHAVE_ESQUERDA, "Esperado '{' antes do corpo do método.");
         const declaracoesCorpo = [];
-        while (!this.estaNoFinal() && !this.verificarTipoSimboloAtual(prisma_1.default.CHAVE_DIREITA)) {
+        while (!this.estaNoFinal() &&
+            !this.verificarTipoSimboloAtual(prisma_1.default.CHAVE_DIREITA)) {
             declaracoesCorpo.push(await this.resolverDeclaracaoForaDeBloco());
         }
         this.consumir(prisma_1.default.CHAVE_DIREITA, "Esperado '}' após o corpo do método.");
@@ -14961,10 +14963,7 @@ async function aleatorio(interpretador) {
  * @returns {Promise<number>} Um número real entre os valores máximo e mínimo especificados.
  */
 async function aleatorio_entre(interpretador, ...argumentos) {
-    const argumentosUsuario = argumentos.filter((arg) => !(arg &&
-        typeof arg === 'object' &&
-        'lexema' in arg &&
-        'linha' in arg));
+    const argumentosUsuario = argumentos.filter((arg) => !(arg && typeof arg === 'object' && 'lexema' in arg && 'linha' in arg));
     if (argumentosUsuario.length <= 0) {
         return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao({
             hashArquivo: interpretador.hashArquivoDeclaracaoAtual,
@@ -16194,26 +16193,26 @@ exports.default = {
                 if (texto.length >= largura)
                     return texto;
                 switch (alinhamento) {
-                    case '<': return texto.padEnd(largura, preenchimento);
-                    case '>': return texto.padStart(largura, preenchimento);
+                    case '<':
+                        return texto.padEnd(largura, preenchimento);
+                    case '>':
+                        return texto.padStart(largura, preenchimento);
                     case '^': {
                         const total = largura - texto.length;
                         const esquerda = Math.floor(total / 2);
                         const direita = total - esquerda;
-                        return preenchimento.repeat(esquerda) + texto + preenchimento.repeat(direita);
+                        return (preenchimento.repeat(esquerda) + texto + preenchimento.repeat(direita));
                     }
-                    default: return texto;
+                    default:
+                        return texto;
                 }
             };
             const processarConfiguracaoNumerica = (valor, configuracao) => {
                 const formatadoresNumericos = ['f', '%', 'x', 'X', 'b'];
-                const ehNumerico = formatadoresNumericos
-                    .some(f => configuracao.includes(f))
-                    || /^0\d+$/.test(configuracao);
+                const ehNumerico = formatadoresNumericos.some((f) => configuracao.includes(f)) ||
+                    /^0\d+$/.test(configuracao);
                 if (ehNumerico && typeof valor !== 'number') {
-                    const tipoExibido = typeof valor === 'string'
-                        ? 'texto'
-                        : typeof valor;
+                    const tipoExibido = typeof valor === 'string' ? 'texto' : typeof valor;
                     throw new excecoes_1.ErroEmTempoDeExecucao(null, `Erro: Código de formato desconhecido para objeto do tipo '${tipoExibido}'.`, interpretador.linhaDeclaracaoAtual);
                 }
                 if (typeof valor !== 'number')
@@ -16230,8 +16229,7 @@ exports.default = {
                 if (matchZero) {
                     const largura = parseInt(matchZero[1], 10);
                     const negativo = valor < 0;
-                    const strAbs = Math
-                        .abs(valor)
+                    const strAbs = Math.abs(valor)
                         .toString()
                         .padStart(negativo ? largura - 1 : largura, '0');
                     return negativo ? `-${strAbs}` : strAbs;
@@ -16245,7 +16243,9 @@ exports.default = {
                     let formatado = numero.toFixed(casas);
                     if (configuracao.includes(',')) {
                         const [inteiro, decimal] = formatado.split('.');
-                        formatado = inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (decimal ? '.' + decimal : '');
+                        formatado =
+                            inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, ',') +
+                                (decimal ? '.' + decimal : '');
                     }
                     return tipo === '%' ? `${formatado}%` : formatado;
                 }
@@ -16271,9 +16271,7 @@ exports.default = {
                         : processarConfiguracaoNumerica(valor, configuracao);
                 }
                 else if (ehMascaraDepuracao(mioloLimpo)) {
-                    const representacao = (typeof valor === 'string')
-                        ? `'${valor}'`
-                        : String(valor);
+                    const representacao = typeof valor === 'string' ? `'${valor}'` : String(valor);
                     resultado = miolo + representacao;
                 }
                 else {
@@ -23252,8 +23250,7 @@ async function visitarExpressaoAcessoMetodo(interpretador, expressao) {
     if (Array.isArray(objeto)) {
         tipoObjeto = 'vetor';
     }
-    else if (objeto instanceof construtos_1.TuplaN ||
-        objeto.constructor.name === 'TuplaN') {
+    else if (objeto instanceof construtos_1.TuplaN || objeto.constructor.name === 'TuplaN') {
         tipoObjeto = 'tupla';
     }
     else if (objeto.constructor === Object) {
@@ -23317,8 +23314,7 @@ async function visitarExpressaoAcessoMetodoOuPropriedade(interpretador, expressa
     if (Array.isArray(objeto)) {
         tipoObjeto = 'vetor';
     }
-    else if (objeto instanceof construtos_1.TuplaN ||
-        objeto.constructor.name === 'TuplaN') {
+    else if (objeto instanceof construtos_1.TuplaN || objeto.constructor.name === 'TuplaN') {
         tipoObjeto = 'tupla';
     }
     else if (objeto.constructor === Object) {
@@ -23332,8 +23328,7 @@ async function visitarExpressaoAcessoMetodoOuPropriedade(interpretador, expressa
         return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, primitiva.implementacao, expressao.simbolo.lexema, tipoObjeto);
     }
     // Fallback para propriedades simples do objeto
-    if (objeto.hasOwnProperty &&
-        objeto.hasOwnProperty(expressao.simbolo.lexema)) {
+    if (objeto.hasOwnProperty && objeto.hasOwnProperty(expressao.simbolo.lexema)) {
         return objeto[expressao.simbolo.lexema];
     }
     // Último caso: objeto simples, sem construtor, sem protótipo. Exemplo: {'a': 1, 'b': 2}
@@ -23363,8 +23358,7 @@ async function visitarExpressaoAcessoPropriedade(interpretador, expressao) {
     if (Array.isArray(objeto)) {
         tipoObjeto = 'vetor';
     }
-    else if (objeto instanceof construtos_1.TuplaN ||
-        objeto.constructor.name === 'TuplaN') {
+    else if (objeto instanceof construtos_1.TuplaN || objeto.constructor.name === 'TuplaN') {
         tipoObjeto = 'tupla';
     }
     else if (objeto.constructor === Object) {
@@ -23490,12 +23484,12 @@ function resolverPrimitiva(interpretador, tipo, nomeMetodo) {
     if (viaMapa)
         return viaMapa;
     const modulos = {
-        'dicionário': primitivas_dicionario_1.default,
-        'número': primitivas_numero_1.default,
-        'numero': primitivas_numero_1.default,
-        'texto': primitivas_texto_1.default,
-        'vetor': primitivas_vetor_1.default,
-        'tupla': primitivas_tupla_1.default,
+        dicionário: primitivas_dicionario_1.default,
+        número: primitivas_numero_1.default,
+        numero: primitivas_numero_1.default,
+        texto: primitivas_texto_1.default,
+        vetor: primitivas_vetor_1.default,
+        tupla: primitivas_tupla_1.default,
     };
     return modulos[tipo]?.[nomeMetodo] ?? undefined;
 }
@@ -23668,6 +23662,7 @@ class InterpretadorPitugues extends interpretador_1.Interpretador {
         }
         this.pilhaEscoposExecucao = pilhaPitugues;
         this.lancarErroPorDivisaoPorZero = true;
+        this.requerDeclaracaoPropriedades = false;
     }
     pontoInicializacaoBibliotecasGlobais() {
         for (const [nome, valor] of Object.entries(bibliotecaGlobalPitugues)) {
@@ -24144,7 +24139,7 @@ class DeleguaFuncao extends chamavel_1.Chamavel {
         this.eInicializador = eInicializador;
     }
     aridade() {
-        return this.declaracao?.parametros?.filter(p => p.abrangencia !== 'multiplo').length || 0;
+        return this.declaracao?.parametros?.filter((p) => p.abrangencia !== 'multiplo').length || 0;
     }
     /**
      * Método utilizado por Delégua para representar esta função quando impressa.
@@ -25543,7 +25538,8 @@ class InterpretadorBase {
         ];
         const valores = [];
         for (let propriedade of propriedadesValidas) {
-            if (expressao.hasOwnProperty(propriedade) && expressao[propriedade] !== undefined) {
+            if (expressao.hasOwnProperty(propriedade) &&
+                expressao[propriedade] !== undefined) {
                 const valor = await this.avaliar(expressao[propriedade]);
                 valores.push(valor);
             }
@@ -25892,7 +25888,9 @@ class InterpretadorBase {
                         valor: valorDireito,
                         imutavel: false,
                     };
-                return await metodoASerChamado.chamar(this, [{ nome: null, valor: argumentoOperador }]);
+                return await metodoASerChamado.chamar(this, [
+                    { nome: null, valor: argumentoOperador },
+                ]);
             }
         }
         const tipoEsquerdo = esquerda?.hasOwnProperty('tipo')
@@ -25906,7 +25904,8 @@ class InterpretadorBase {
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt se qualquer operando for BigInt
                 if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
-                    return this.converterParaBigInt(valorEsquerdo) ** this.converterParaBigInt(valorDireito);
+                    return (this.converterParaBigInt(valorEsquerdo) **
+                        this.converterParaBigInt(valorDireito));
                 }
                 const resultadoExponenciacao = Math.pow(valorEsquerdo, valorDireito);
                 return resultadoExponenciacao;
@@ -25933,7 +25932,8 @@ class InterpretadorBase {
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt se qualquer operando for BigInt
                 if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
-                    return this.converterParaBigInt(valorEsquerdo) - this.converterParaBigInt(valorDireito);
+                    return (this.converterParaBigInt(valorEsquerdo) -
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) - Number(valorDireito);
             case delegua_1.default.ADICAO:
@@ -25968,8 +25968,10 @@ class InterpretadorBase {
                 }
                 // TODO: Se tipo for 'qualquer', seria uma boa confiar nos operadores
                 // tradicionais do JavaScript?
-                if (tipoEsquerdo === 'qualquer' || tipoDireito === 'qualquer' ||
-                    tipoEsquerdo === 'nulo' || tipoDireito === 'nulo') {
+                if (tipoEsquerdo === 'qualquer' ||
+                    tipoDireito === 'qualquer' ||
+                    tipoEsquerdo === 'nulo' ||
+                    tipoDireito === 'nulo') {
                     return valorEsquerdo + valorDireito;
                 }
                 return this.paraTexto(valorEsquerdo) + this.paraTexto(valorDireito);
@@ -26058,7 +26060,8 @@ class InterpretadorBase {
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt se qualquer operando for BigInt
                 if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
-                    return this.converterParaBigInt(valorEsquerdo) & this.converterParaBigInt(valorDireito);
+                    return (this.converterParaBigInt(valorEsquerdo) &
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) & Number(valorDireito);
             case delegua_1.default.CIRCUMFLEXO:
@@ -26068,7 +26071,8 @@ class InterpretadorBase {
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt se qualquer operando for BigInt
                 if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
-                    return this.converterParaBigInt(valorEsquerdo) ^ this.converterParaBigInt(valorDireito);
+                    return (this.converterParaBigInt(valorEsquerdo) ^
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) ^ Number(valorDireito);
             case delegua_1.default.BIT_OR:
@@ -26078,21 +26082,28 @@ class InterpretadorBase {
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt se qualquer operando for BigInt
                 if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint') {
-                    return this.converterParaBigInt(valorEsquerdo) | this.converterParaBigInt(valorDireito);
+                    return (this.converterParaBigInt(valorEsquerdo) |
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) | Number(valorDireito);
             case delegua_1.default.MENOR_MENOR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt (interno para longo) se qualquer operando for BigInt ou se deslocamento >= 32
-                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint' || Number(valorDireito) >= 32) {
-                    return this.converterParaBigInt(valorEsquerdo) << this.converterParaBigInt(valorDireito);
+                if (typeof valorEsquerdo === 'bigint' ||
+                    typeof valorDireito === 'bigint' ||
+                    Number(valorDireito) >= 32) {
+                    return (this.converterParaBigInt(valorEsquerdo) <<
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) << Number(valorDireito);
             case delegua_1.default.MAIOR_MAIOR:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
                 // Auto-promove para BigInt (interno para longo) se qualquer operando for BigInt ou se deslocamento >= 32
-                if (typeof valorEsquerdo === 'bigint' || typeof valorDireito === 'bigint' || Number(valorDireito) >= 32) {
-                    return this.converterParaBigInt(valorEsquerdo) >> this.converterParaBigInt(valorDireito);
+                if (typeof valorEsquerdo === 'bigint' ||
+                    typeof valorDireito === 'bigint' ||
+                    Number(valorDireito) >= 32) {
+                    return (this.converterParaBigInt(valorEsquerdo) >>
+                        this.converterParaBigInt(valorDireito));
                 }
                 return Number(valorEsquerdo) >> Number(valorDireito);
             case delegua_1.default.DIFERENTE:
@@ -28239,7 +28250,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         // Objeto simples do JavaScript, ou dicionário de Delégua.
         if (objeto.constructor === Object) {
             if (expressao.nomeMetodo in primitivas_dicionario_1.default) {
-                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.nomeMetodo].implementacao;
+                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.nomeMetodo]
+                    .implementacao;
                 return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaDicionario, expressao.nomeMetodo, 'dicionário');
             }
             return objeto[expressao.nomeMetodo] || null;
@@ -28278,7 +28290,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             case delegua_1.default.NUMERO:
             case delegua_1.default.NÚMERO:
                 if (expressao.nomeMetodo in primitivas_numero_1.default) {
-                    const metodoDePrimitivaNumero = primitivas_numero_1.default[expressao.nomeMetodo].implementacao;
+                    const metodoDePrimitivaNumero = primitivas_numero_1.default[expressao.nomeMetodo]
+                        .implementacao;
                     if (metodoDePrimitivaNumero) {
                         return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaNumero, expressao.nomeMetodo, tipoObjeto);
                     }
@@ -28291,7 +28304,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                 break;
             case delegua_1.default.TEXTO:
                 if (expressao.nomeMetodo in primitivas_texto_1.default) {
-                    const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.nomeMetodo].implementacao;
+                    const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.nomeMetodo]
+                        .implementacao;
                     if (metodoDePrimitivaTexto) {
                         return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaTexto, expressao.nomeMetodo, 'texto');
                     }
@@ -28311,7 +28325,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             case delegua_1.default.VETOR_QUALQUER:
             case delegua_1.default.VETOR_TEXTO:
                 if (expressao.nomeMetodo in primitivas_vetor_1.default) {
-                    const metodoDePrimitivaVetor = primitivas_vetor_1.default[expressao.nomeMetodo].implementacao;
+                    const metodoDePrimitivaVetor = primitivas_vetor_1.default[expressao.nomeMetodo]
+                        .implementacao;
                     if (metodoDePrimitivaVetor) {
                         return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaVetor, expressao.nomeMetodo, tipoObjeto);
                     }
@@ -28412,7 +28427,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         // Objeto simples do JavaScript, ou dicionário de Delégua.
         if (objeto.constructor === Object) {
             if (expressao.simbolo.lexema in primitivas_dicionario_1.default) {
-                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.simbolo.lexema].implementacao;
+                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.simbolo.lexema]
+                    .implementacao;
                 return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaDicionario, expressao.simbolo.lexema, 'dicionário');
             }
             return objeto[expressao.simbolo.lexema];
@@ -28425,7 +28441,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                     return funcaoExt.funcaoPorExtensao(objeto);
                 throw new excecoes_1.ErroEmTempoDeExecucao(expressao.simbolo, `Método de primitiva '${expressao.simbolo.lexema}' não existe para o tipo texto.`);
             }
-            const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.simbolo.lexema].implementacao;
+            const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.simbolo.lexema]
+                .implementacao;
             return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaTexto, expressao.simbolo.lexema, 'texto');
         }
         // A partir daqui, presume-se que o objeto é uma das estruturas
@@ -28450,7 +28467,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                         return funcaoExt.funcaoPorExtensao(objeto);
                     throw new excecoes_1.ErroEmTempoDeExecucao(expressao.simbolo, `Método de primitiva '${expressao.simbolo.lexema}' não existe para o tipo ${tipoObjeto}.`);
                 }
-                const metodoDePrimitivaNumero = primitivas_numero_1.default[expressao.simbolo.lexema].implementacao;
+                const metodoDePrimitivaNumero = primitivas_numero_1.default[expressao.simbolo.lexema]
+                    .implementacao;
                 if (metodoDePrimitivaNumero) {
                     return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaNumero, expressao.simbolo.lexema, 'número');
                 }
@@ -28463,7 +28481,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                         return funcaoExt.funcaoPorExtensao(objeto);
                     throw new excecoes_1.ErroEmTempoDeExecucao(expressao.simbolo, `Método de primitiva '${expressao.simbolo.lexema}' não existe para o tipo ${tipoObjeto}.`);
                 }
-                const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.simbolo.lexema].implementacao;
+                const metodoDePrimitivaTexto = primitivas_texto_1.default[expressao.simbolo.lexema]
+                    .implementacao;
                 if (metodoDePrimitivaTexto) {
                     return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaTexto, expressao.simbolo.lexema, 'texto');
                 }
@@ -28483,7 +28502,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                         return funcaoExt.funcaoPorExtensao(objeto);
                     throw new excecoes_1.ErroEmTempoDeExecucao(expressao.simbolo, `Método de primitiva '${expressao.simbolo.lexema}' não existe para o tipo ${tipoObjeto}.`);
                 }
-                const metodoDePrimitivaVetor = primitivas_vetor_1.default[expressao.simbolo.lexema].implementacao;
+                const metodoDePrimitivaVetor = primitivas_vetor_1.default[expressao.simbolo.lexema]
+                    .implementacao;
                 if (metodoDePrimitivaVetor) {
                     return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaVetor, expressao.simbolo.lexema, tipoObjeto);
                 }
@@ -28531,7 +28551,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         // Objeto simples do JavaScript, ou dicionário de Delégua.
         if (objeto.constructor === Object) {
             if (expressao.nomePropriedade in primitivas_dicionario_1.default) {
-                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.nomePropriedade].implementacao;
+                const metodoDePrimitivaDicionario = primitivas_dicionario_1.default[expressao.nomePropriedade]
+                    .implementacao;
                 return new estruturas_1.MetodoPrimitiva(nomeObjeto, objeto, metodoDePrimitivaDicionario, expressao.nomePropriedade, 'dicionário');
             }
             return objeto[expressao.nomePropriedade] || null;
@@ -29207,9 +29228,9 @@ class PilhaEscoposExecucao {
         }
         espacoMemoriaAncestral.valores[simbolo.lexema] = {
             valor,
-            tipo: (variavel.tipo === 'nulo' && !variavel.tipoExplicito)
+            tipo: variavel.tipo === 'nulo' && !variavel.tipoExplicito
                 ? (0, inferenciador_1.inferirTipoVariavel)(valor)
-                : (variavel.tipo || (0, inferenciador_1.inferirTipoVariavel)(valor)),
+                : variavel.tipo || (0, inferenciador_1.inferirTipoVariavel)(valor),
             imutavel: false,
             tipoExplicito: variavel.tipoExplicito,
         };
@@ -29230,9 +29251,7 @@ class PilhaEscoposExecucao {
                 }
                 const tipoAtual = variavel && variavel.hasOwnProperty('tipo') ? variavel.tipo : null;
                 const deveLiberarTipo = tipoAtual === 'nulo' && !variavel.tipoExplicito;
-                const tipoInferido = tipoAtual && !deveLiberarTipo
-                    ? tipoAtual
-                    : (0, inferenciador_1.inferirTipoVariavel)(valor);
+                const tipoInferido = tipoAtual && !deveLiberarTipo ? tipoAtual : (0, inferenciador_1.inferirTipoVariavel)(valor);
                 const tipo = (tipoInferido || 'objeto').toLowerCase();
                 const valorResolvido = this.converterValor(tipo, valor);
                 if (indice !== undefined && indice !== null) {
@@ -29504,7 +29523,9 @@ class LexadorCalango {
         const linhaPrimeiroCaracter = this.linha;
         // Restringe leitura à linha atual (como analisarNumero), evitando
         // que avancar() mude this.linha e corrompa o cálculo do substring.
-        while (this.simboloAtual() !== "'" && this.linha === linhaPrimeiroCaracter && !this.eFinalDoCodigo()) {
+        while (this.simboloAtual() !== "'" &&
+            this.linha === linhaPrimeiroCaracter &&
+            !this.eFinalDoCodigo()) {
             this.avancar();
         }
         if (this.linha !== linhaPrimeiroCaracter || this.eFinalDoCodigo()) {
@@ -32580,10 +32601,12 @@ class Lexador {
                                 break;
                             }
                         }
-                        valor += hex.length === 2 ? String.fromCharCode(parseInt(hex, 16)) : '\\x' + hex;
+                        valor +=
+                            hex.length === 2 ? String.fromCharCode(parseInt(hex, 16)) : '\\x' + hex;
                         break;
                     }
-                    case '\0': break; // barra invertida no fim de linha: ignora e continua na próxima linha
+                    case '\0':
+                        break; // barra invertida no fim de linha: ignora e continua na próxima linha
                     default:
                         valor += '\\' + proximoCaractere;
                         break;
@@ -50512,13 +50535,19 @@ class TradutorElixir {
     }
     mapearTipoParaTypespec(tipo) {
         switch (tipo) {
-            case 'texto': return 'String.t()';
+            case 'texto':
+                return 'String.t()';
             case 'numero':
-            case 'inteiro': return 'integer()';
-            case 'real': return 'float()';
-            case 'logico': return 'boolean()';
-            case 'vazio': return 'no_return()';
-            default: return 'term()';
+            case 'inteiro':
+                return 'integer()';
+            case 'real':
+                return 'float()';
+            case 'logico':
+                return 'boolean()';
+            case 'vazio':
+                return 'no_return()';
+            default:
+                return 'term()';
         }
     }
     /**
@@ -50607,11 +50636,15 @@ class TradutorElixir {
         this.moduloAtual = nomeModulo;
         if (declaracao.estrangeira) {
             // Classe estrangeira: emitir @callback para cada método, definindo a interface esperada do módulo.
-            resultado += this.adicionarIndentacao() + `@moduledoc "Classe estrangeira — implementação externa."\n`;
+            resultado +=
+                this.adicionarIndentacao() +
+                    `@moduledoc "Classe estrangeira — implementação externa."\n`;
             for (const metodo of declaracao.metodos) {
                 const params = metodo.funcao.parametros.map(() => 'term()').join(', ');
                 const retorno = this.mapearTipoParaTypespec(metodo.funcao.tipo);
-                resultado += this.adicionarIndentacao() + `@callback ${metodo.simbolo.lexema}(${params}) :: ${retorno}\n`;
+                resultado +=
+                    this.adicionarIndentacao() +
+                        `@callback ${metodo.simbolo.lexema}(${params}) :: ${retorno}\n`;
             }
         }
         else {
@@ -53088,22 +53121,38 @@ class TradutorPortugolIpt {
     // ── Operadores ───────────────────────────────────────────────────────────────
     traduzirOperador(tipo) {
         switch (tipo) {
-            case portugol_ipt_1.default.ADICAO: return '+';
-            case portugol_ipt_1.default.SUBTRACAO: return '-';
-            case portugol_ipt_1.default.MULTIPLICACAO: return '*';
-            case portugol_ipt_1.default.DIVISAO: return '/';
-            case portugol_ipt_1.default.MODULO: return '%';
-            case portugol_ipt_1.default.EXPONENCIACAO: return '**';
-            case portugol_ipt_1.default.IGUAL: return '==';
-            case portugol_ipt_1.default.DIFERENTE: return '!=';
-            case portugol_ipt_1.default.MAIOR: return '>';
-            case portugol_ipt_1.default.MAIOR_IGUAL: return '>=';
-            case portugol_ipt_1.default.MENOR: return '<';
-            case portugol_ipt_1.default.MENOR_IGUAL: return '<=';
-            case portugol_ipt_1.default.E: return '&&';
-            case portugol_ipt_1.default.OU: return '||';
-            case portugol_ipt_1.default.XOU: return '^^';
-            default: return tipo;
+            case portugol_ipt_1.default.ADICAO:
+                return '+';
+            case portugol_ipt_1.default.SUBTRACAO:
+                return '-';
+            case portugol_ipt_1.default.MULTIPLICACAO:
+                return '*';
+            case portugol_ipt_1.default.DIVISAO:
+                return '/';
+            case portugol_ipt_1.default.MODULO:
+                return '%';
+            case portugol_ipt_1.default.EXPONENCIACAO:
+                return '**';
+            case portugol_ipt_1.default.IGUAL:
+                return '==';
+            case portugol_ipt_1.default.DIFERENTE:
+                return '!=';
+            case portugol_ipt_1.default.MAIOR:
+                return '>';
+            case portugol_ipt_1.default.MAIOR_IGUAL:
+                return '>=';
+            case portugol_ipt_1.default.MENOR:
+                return '<';
+            case portugol_ipt_1.default.MENOR_IGUAL:
+                return '<=';
+            case portugol_ipt_1.default.E:
+                return '&&';
+            case portugol_ipt_1.default.OU:
+                return '||';
+            case portugol_ipt_1.default.XOU:
+                return '^^';
+            default:
+                return tipo;
         }
     }
     // ── Construtos ───────────────────────────────────────────────────────────────
@@ -53145,10 +53194,13 @@ class TradutorPortugolIpt {
     traduzirConstrutoUnario(unario) {
         const operando = this.traduzirConstruto(unario.operando);
         switch (unario.operador.tipo) {
-            case portugol_ipt_1.default.SUBTRACAO: return `-${operando}`;
+            case portugol_ipt_1.default.SUBTRACAO:
+                return `-${operando}`;
             case portugol_ipt_1.default.NEGACAO:
-            case portugol_ipt_1.default.NAO: return `!(${operando})`;
-            default: return `!(${operando})`;
+            case portugol_ipt_1.default.NAO:
+                return `!(${operando})`;
+            default:
+                return `!(${operando})`;
         }
     }
     traduzirConstrutoAtribuir(atribuir) {
@@ -53193,24 +53245,36 @@ class TradutorPortugolIpt {
     }
     tipoParaDelégua(tipo) {
         switch (tipo) {
-            case 'inteiro': return 'inteiro';
-            case 'texto': return 'texto';
-            case 'real': return 'real';
+            case 'inteiro':
+                return 'inteiro';
+            case 'texto':
+                return 'texto';
+            case 'real':
+                return 'real';
             case 'lógico':
-            case 'logico': return 'logico';
-            case 'caracter': return 'caracter';
-            default: return tipo;
+            case 'logico':
+                return 'logico';
+            case 'caracter':
+                return 'caracter';
+            default:
+                return tipo;
         }
     }
     valorPadraoPorTipo(tipo) {
         switch (tipo) {
-            case 'inteiro': return '0';
-            case 'texto': return "''";
-            case 'real': return '0.0';
+            case 'inteiro':
+                return '0';
+            case 'texto':
+                return "''";
+            case 'real':
+                return '0.0';
             case 'lógico':
-            case 'logico': return 'falso';
-            case 'caracter': return "' '";
-            default: return 'nulo';
+            case 'logico':
+                return 'falso';
+            case 'caracter':
+                return "' '";
+            default:
+                return 'nulo';
         }
     }
     traduzirDeclaracaoVar(declaracaoVar) {
@@ -53303,9 +53367,7 @@ class TradutorPortugolIpt {
                 init = this.traduzirDeclaracao(ini);
             }
         }
-        const cond = declaracaoPara.condicao
-            ? this.traduzirConstruto(declaracaoPara.condicao)
-            : '';
+        const cond = declaracaoPara.condicao ? this.traduzirConstruto(declaracaoPara.condicao) : '';
         const incr = declaracaoPara.incrementar
             ? this.traduzirConstruto(declaracaoPara.incrementar)
             : '';
@@ -53325,7 +53387,8 @@ class TradutorPortugolIpt {
         this.indentacao += 4;
         if (caminho.condicoes && caminho.condicoes.length > 0) {
             for (const cond of caminho.condicoes) {
-                resultado += ' '.repeat(this.indentacao) + `caso ${this.traduzirConstruto(cond)}:\n`;
+                resultado +=
+                    ' '.repeat(this.indentacao) + `caso ${this.traduzirConstruto(cond)}:\n`;
             }
         }
         else {
@@ -54339,7 +54402,9 @@ class TradutorReversoCalango {
             .map((parametro) => this.traduzirParametro(parametro))
             .filter((p) => p)
             .join(', ');
-        const tipoRetorno = declaracaoFuncao.tipo && declaracaoFuncao.tipo !== 'qualquer' && declaracaoFuncao.tipo !== 'vazio'
+        const tipoRetorno = declaracaoFuncao.tipo &&
+            declaracaoFuncao.tipo !== 'qualquer' &&
+            declaracaoFuncao.tipo !== 'vazio'
             ? `: ${declaracaoFuncao.tipo}`
             : '';
         let resultado = `funcao ${declaracaoFuncao.simbolo.lexema}(${parametros})${tipoRetorno} `;
@@ -54867,10 +54932,16 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         return node.text;
     }
     visitFile_input(ctx) {
-        return ctx.stmt().map((s) => this.visit(s)).join('\n');
+        return ctx
+            .stmt()
+            .map((s) => this.visit(s))
+            .join('\n');
     }
     visitSimple_stmt(ctx) {
-        return ctx.small_stmt().map((s) => this.visit(s)).join('; ');
+        return ctx
+            .small_stmt()
+            .map((s) => this.visit(s))
+            .join('; ');
     }
     visitExpr_stmt(ctx) {
         const lhs = this.visit(ctx.testlist_star_expr());
@@ -54885,11 +54956,7 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
             const op = this.visitAugassign(ctx.augassign());
             const testlist = ctx.testlist();
             const yieldExpr = ctx.yield_expr();
-            const rhs = testlist
-                ? this.visit(testlist)
-                : yieldExpr
-                    ? this.visit(yieldExpr)
-                    : '';
+            const rhs = testlist ? this.visit(testlist) : yieldExpr ? this.visit(yieldExpr) : '';
             return `${lhs} ${op} ${rhs}`;
         }
         return lhs;
@@ -54926,10 +54993,16 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         return ctx.text;
     }
     visitTestlist_star_expr(ctx) {
-        return ctx.test().map((t) => this.visit(t)).join(', ');
+        return ctx
+            .test()
+            .map((t) => this.visit(t))
+            .join(', ');
     }
     visitTestlist(ctx) {
-        return ctx.test().map((t) => this.visit(t)).join(', ');
+        return ctx
+            .test()
+            .map((t) => this.visit(t))
+            .join(', ');
     }
     visitTest(ctx) {
         const orTests = ctx.or_test();
@@ -54942,10 +55015,16 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         return this.visitChildren(ctx);
     }
     visitOr_test(ctx) {
-        return ctx.and_test().map((t) => this.visit(t)).join(' ou ');
+        return ctx
+            .and_test()
+            .map((t) => this.visit(t))
+            .join(' ou ');
     }
     visitAnd_test(ctx) {
-        return ctx.not_test().map((t) => this.visit(t)).join(' e ');
+        return ctx
+            .not_test()
+            .map((t) => this.visit(t))
+            .join(' e ');
     }
     visitNot_test(ctx) {
         if (ctx.NOT()) {
@@ -55131,7 +55210,10 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         return ctx.text;
     }
     visitArglist(ctx) {
-        return ctx.argument().map((a) => this.visit(a)).join(', ');
+        return ctx
+            .argument()
+            .map((a) => this.visit(a))
+            .join(', ');
     }
     visitArgument(ctx) {
         const testes = ctx.test();
@@ -55149,7 +55231,10 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         if (compFor) {
             return this.traduzirCompreensao(ctx.test(0), compFor);
         }
-        return ctx.test().map((t) => this.visit(t)).join(', ');
+        return ctx
+            .test()
+            .map((t) => this.visit(t))
+            .join(', ');
     }
     traduzirCompreensao(exprCtx, compFor) {
         const variavel = this.visit(compFor.exprlist());
@@ -55206,7 +55291,10 @@ class TradutorReversoPython extends AbstractParseTreeVisitor_1.AbstractParseTree
         return tests.map((t) => this.visit(t)).join(', ');
     }
     visitSubscriptlist(ctx) {
-        return ctx.subscript().map((s) => this.visitSubscript(s)).join(', ');
+        return ctx
+            .subscript()
+            .map((s) => this.visitSubscript(s))
+            .join(', ');
     }
     visitSubscript(ctx) {
         const tests = ctx.test();
