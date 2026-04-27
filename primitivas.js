@@ -564,7 +564,7 @@ exports.default = {
     },
 };
 
-},{"../construtos":40,"../informacao-elemento-sintatico":73}],8:[function(require,module,exports){
+},{"../construtos":41,"../informacao-elemento-sintatico":75}],8:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const informacao_elemento_sintatico_1 = require("../informacao-elemento-sintatico");
@@ -649,7 +649,7 @@ exports.default = {
     },
 };
 
-},{"../informacao-elemento-sintatico":73}],9:[function(require,module,exports){
+},{"../informacao-elemento-sintatico":75}],9:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.implementacaoParticao = void 0;
@@ -1048,7 +1048,7 @@ exports.default = {
     },
 };
 
-},{"../construtos":40,"../excecoes":70,"../informacao-elemento-sintatico":73}],10:[function(require,module,exports){
+},{"../construtos":41,"../excecoes":72,"../informacao-elemento-sintatico":75}],10:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const informacao_elemento_sintatico_1 = require("../informacao-elemento-sintatico");
@@ -1459,7 +1459,7 @@ exports.default = {
     },
 };
 
-},{"../construtos":40,"../excecoes":70,"../inferenciador":72,"../informacao-elemento-sintatico":73}],11:[function(require,module,exports){
+},{"../construtos":41,"../excecoes":72,"../inferenciador":74,"../informacao-elemento-sintatico":75}],11:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AcessoElementoMatriz = void 0;
@@ -1830,7 +1830,7 @@ class Atribuir {
 }
 exports.Atribuir = Atribuir;
 
-},{"./variavel":67}],23:[function(require,module,exports){
+},{"./variavel":69}],23:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Binario = void 0;
@@ -1905,6 +1905,29 @@ exports.Binario = Binario;
 },{}],24:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Bote = void 0;
+class Bote {
+    constructor(hashArquivo, linha, esquerda, direita) {
+        this.linha = linha;
+        this.hashArquivo = hashArquivo;
+        this.esquerda = esquerda;
+        this.direita = direita;
+    }
+    async aceitar(visitante) {
+        return await visitante.visitarExpressaoBote(this);
+    }
+    paraTexto() {
+        return `<bote />`;
+    }
+    paraTextoSaida() {
+        throw new Error('Método não implementado.');
+    }
+}
+exports.Bote = Bote;
+
+},{}],25:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.Chamada = void 0;
 const geracao_identificadores_1 = require("../geracao-identificadores");
 /**
@@ -1934,7 +1957,7 @@ class Chamada {
 }
 exports.Chamada = Chamada;
 
-},{"../geracao-identificadores":71}],25:[function(require,module,exports){
+},{"../geracao-identificadores":73}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComentarioComoConstruto = void 0;
@@ -1961,7 +1984,7 @@ class ComentarioComoConstruto {
 }
 exports.ComentarioComoConstruto = ComentarioComoConstruto;
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ComponenteLinguagem = void 0;
@@ -1987,7 +2010,7 @@ class ComponenteLinguagem {
 }
 exports.ComponenteLinguagem = ComponenteLinguagem;
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Constante = void 0;
@@ -2012,11 +2035,11 @@ class Constante {
 }
 exports.Constante = Constante;
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Decorador = void 0;
@@ -2057,7 +2080,7 @@ class Decorador {
 }
 exports.Decorador = Decorador;
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DefinirValor = void 0;
@@ -2081,7 +2104,7 @@ class DefinirValor {
 }
 exports.DefinirValor = DefinirValor;
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dicionario = void 0;
@@ -2106,7 +2129,7 @@ class Dicionario {
 }
 exports.Dicionario = Dicionario;
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Elvis = void 0;
@@ -2131,7 +2154,7 @@ class Elvis {
 }
 exports.Elvis = Elvis;
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnquantoComoConstruto = void 0;
@@ -2154,7 +2177,7 @@ class EnquantoComoConstruto {
 }
 exports.EnquantoComoConstruto = EnquantoComoConstruto;
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExpressaoRegular = void 0;
@@ -2177,7 +2200,7 @@ class ExpressaoRegular {
 }
 exports.ExpressaoRegular = ExpressaoRegular;
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FazerComoConstruto = void 0;
@@ -2200,7 +2223,7 @@ class FazerComoConstruto {
 }
 exports.FazerComoConstruto = FazerComoConstruto;
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FimPara = void 0;
@@ -2233,7 +2256,7 @@ class FimPara {
 }
 exports.FimPara = FimPara;
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FormatacaoEscrita = void 0;
@@ -2262,7 +2285,7 @@ class FormatacaoEscrita {
 }
 exports.FormatacaoEscrita = FormatacaoEscrita;
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FuncaoConstruto = void 0;
@@ -2300,7 +2323,7 @@ class FuncaoConstruto {
 }
 exports.FuncaoConstruto = FuncaoConstruto;
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ImportarComoConstruto = void 0;
@@ -2326,7 +2349,7 @@ class ImportarComoConstruto {
 }
 exports.ImportarComoConstruto = ImportarComoConstruto;
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -2356,6 +2379,7 @@ __exportStar(require("./atribuicao-por-indice"), exports);
 __exportStar(require("./atribuicao-por-indices-matriz"), exports);
 __exportStar(require("./atribuir"), exports);
 __exportStar(require("./binario"), exports);
+__exportStar(require("./bote"), exports);
 __exportStar(require("./chamada"), exports);
 __exportStar(require("./comentario-como-construto"), exports);
 __exportStar(require("./componente-linguagem"), exports);
@@ -2377,6 +2401,7 @@ __exportStar(require("./leia"), exports);
 __exportStar(require("./lista-compreensao"), exports);
 __exportStar(require("./literal"), exports);
 __exportStar(require("./logico"), exports);
+__exportStar(require("./morsa"), exports);
 __exportStar(require("./para-cada-como-construto"), exports);
 __exportStar(require("./para-como-construto"), exports);
 __exportStar(require("./referencia-biblioteca-global"), exports);
@@ -2392,7 +2417,7 @@ __exportStar(require("./unario"), exports);
 __exportStar(require("./variavel"), exports);
 __exportStar(require("./vetor"), exports);
 
-},{"./acesso-elemento-matriz":11,"./acesso-indice-variavel":12,"./acesso-intervalo-variavel":13,"./acesso-metodo":15,"./acesso-metodo-ou-propriedade":14,"./acesso-propriedade":16,"./agrupamento":17,"./ajuda-como-construto":18,"./argumento-referencia-funcao":19,"./atribuicao-por-indice":20,"./atribuicao-por-indices-matriz":21,"./atribuir":22,"./binario":23,"./chamada":24,"./comentario-como-construto":25,"./componente-linguagem":26,"./constante":27,"./construto":28,"./decorador":29,"./definir-valor":30,"./dicionario":31,"./elvis":32,"./enquanto-como-construto":33,"./expressao-regular":34,"./fazer-como-construto":35,"./fim-para":36,"./formatacao-escrita":37,"./funcao":38,"./importar-como-construto":39,"./isto":41,"./leia":42,"./lista-compreensao":43,"./literal":44,"./logico":45,"./para-cada-como-construto":46,"./para-como-construto":47,"./referencia-biblioteca-global":48,"./referencia-funcao":49,"./se-ternario":50,"./separador":51,"./super":52,"./tipo-de":53,"./tupla":55,"./tupla-n":54,"./tuplas":58,"./unario":66,"./variavel":67,"./vetor":68}],41:[function(require,module,exports){
+},{"./acesso-elemento-matriz":11,"./acesso-indice-variavel":12,"./acesso-intervalo-variavel":13,"./acesso-metodo":15,"./acesso-metodo-ou-propriedade":14,"./acesso-propriedade":16,"./agrupamento":17,"./ajuda-como-construto":18,"./argumento-referencia-funcao":19,"./atribuicao-por-indice":20,"./atribuicao-por-indices-matriz":21,"./atribuir":22,"./binario":23,"./bote":24,"./chamada":25,"./comentario-como-construto":26,"./componente-linguagem":27,"./constante":28,"./construto":29,"./decorador":30,"./definir-valor":31,"./dicionario":32,"./elvis":33,"./enquanto-como-construto":34,"./expressao-regular":35,"./fazer-como-construto":36,"./fim-para":37,"./formatacao-escrita":38,"./funcao":39,"./importar-como-construto":40,"./isto":42,"./leia":43,"./lista-compreensao":44,"./literal":45,"./logico":46,"./morsa":47,"./para-cada-como-construto":48,"./para-como-construto":49,"./referencia-biblioteca-global":50,"./referencia-funcao":51,"./se-ternario":52,"./separador":53,"./super":54,"./tipo-de":55,"./tupla":57,"./tupla-n":56,"./tuplas":60,"./unario":68,"./variavel":69,"./vetor":70}],42:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Isto = void 0;
@@ -2415,7 +2440,7 @@ class Isto {
 }
 exports.Isto = Isto;
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Leia = void 0;
@@ -2445,7 +2470,7 @@ class Leia {
 }
 exports.Leia = Leia;
 
-},{"../geracao-identificadores":71}],43:[function(require,module,exports){
+},{"../geracao-identificadores":73}],44:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ListaCompreensao = void 0;
@@ -2470,7 +2495,7 @@ class ListaCompreensao {
 }
 exports.ListaCompreensao = ListaCompreensao;
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Literal = void 0;
@@ -2501,7 +2526,7 @@ class Literal {
 }
 exports.Literal = Literal;
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Logico = void 0;
@@ -2528,7 +2553,30 @@ class Logico {
 }
 exports.Logico = Logico;
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Morsa = void 0;
+class Morsa {
+    constructor(hashArquivo, variavel, valor) {
+        this.linha = Number(variavel.linha);
+        this.hashArquivo = hashArquivo;
+        this.variavel = variavel;
+        this.valor = valor;
+    }
+    async aceitar(visitante) {
+        return await visitante.visitarExpressaoMorsa(this);
+    }
+    paraTexto() {
+        return `<morsa />`;
+    }
+    paraTextoSaida() {
+        throw new Error('Método não implementado.');
+    }
+}
+exports.Morsa = Morsa;
+
+},{}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParaCadaComoConstruto = void 0;
@@ -2553,7 +2601,7 @@ class ParaCadaComoConstruto {
 }
 exports.ParaCadaComoConstruto = ParaCadaComoConstruto;
 
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParaComoConstruto = void 0;
@@ -2581,7 +2629,7 @@ class ParaComoConstruto {
 }
 exports.ParaComoConstruto = ParaComoConstruto;
 
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReferenciaBibliotecaGlobal = void 0;
@@ -2607,7 +2655,7 @@ class ReferenciaBibliotecaGlobal {
 }
 exports.ReferenciaBibliotecaGlobal = ReferenciaBibliotecaGlobal;
 
-},{}],49:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReferenciaFuncao = void 0;
@@ -2631,7 +2679,7 @@ class ReferenciaFuncao {
 }
 exports.ReferenciaFuncao = ReferenciaFuncao;
 
-},{}],50:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeTernario = void 0;
@@ -2656,7 +2704,7 @@ class SeTernario {
 }
 exports.SeTernario = SeTernario;
 
-},{}],51:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Separador = void 0;
@@ -2678,7 +2726,7 @@ class Separador {
 }
 exports.Separador = Separador;
 
-},{}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Super = void 0;
@@ -2701,7 +2749,7 @@ class Super {
 }
 exports.Super = Super;
 
-},{}],53:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TipoDe = void 0;
@@ -2728,7 +2776,7 @@ class TipoDe {
 }
 exports.TipoDe = TipoDe;
 
-},{}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TuplaN = void 0;
@@ -2757,7 +2805,7 @@ class TuplaN extends tupla_1.Tupla {
 }
 exports.TuplaN = TuplaN;
 
-},{"./tupla":55}],55:[function(require,module,exports){
+},{"./tupla":57}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Tupla = void 0;
@@ -2768,7 +2816,7 @@ class Tupla {
 }
 exports.Tupla = Tupla;
 
-},{}],56:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Deceto = void 0;
@@ -2819,7 +2867,7 @@ class Deceto extends tupla_1.Tupla {
 }
 exports.Deceto = Deceto;
 
-},{"../tupla":55}],57:[function(require,module,exports){
+},{"../tupla":57}],59:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Dupla = void 0;
@@ -2841,7 +2889,7 @@ class Dupla extends tupla_1.Tupla {
 }
 exports.Dupla = Dupla;
 
-},{"../tupla":55}],58:[function(require,module,exports){
+},{"../tupla":57}],60:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -2909,7 +2957,7 @@ class SeletorTuplas {
 }
 exports.SeletorTuplas = SeletorTuplas;
 
-},{"./deceto":56,"./dupla":57,"./noneto":59,"./octeto":60,"./quarteto":61,"./quinteto":62,"./septeto":63,"./sexteto":64,"./trio":65}],59:[function(require,module,exports){
+},{"./deceto":58,"./dupla":59,"./noneto":61,"./octeto":62,"./quarteto":63,"./quinteto":64,"./septeto":65,"./sexteto":66,"./trio":67}],61:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Noneto = void 0;
@@ -2951,7 +2999,7 @@ class Noneto extends tupla_1.Tupla {
 }
 exports.Noneto = Noneto;
 
-},{"../tupla":55}],60:[function(require,module,exports){
+},{"../tupla":57}],62:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Octeto = void 0;
@@ -2991,7 +3039,7 @@ class Octeto extends tupla_1.Tupla {
 }
 exports.Octeto = Octeto;
 
-},{"../tupla":55}],61:[function(require,module,exports){
+},{"../tupla":57}],63:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quarteto = void 0;
@@ -3017,7 +3065,7 @@ class Quarteto extends tupla_1.Tupla {
 }
 exports.Quarteto = Quarteto;
 
-},{"../tupla":55}],62:[function(require,module,exports){
+},{"../tupla":57}],64:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Quinteto = void 0;
@@ -3045,7 +3093,7 @@ class Quinteto extends tupla_1.Tupla {
 }
 exports.Quinteto = Quinteto;
 
-},{"../tupla":55}],63:[function(require,module,exports){
+},{"../tupla":57}],65:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Septeto = void 0;
@@ -3083,7 +3131,7 @@ class Septeto extends tupla_1.Tupla {
 }
 exports.Septeto = Septeto;
 
-},{"../tupla":55}],64:[function(require,module,exports){
+},{"../tupla":57}],66:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Sexteto = void 0;
@@ -3113,7 +3161,7 @@ class Sexteto extends tupla_1.Tupla {
 }
 exports.Sexteto = Sexteto;
 
-},{"../tupla":55}],65:[function(require,module,exports){
+},{"../tupla":57}],67:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Trio = void 0;
@@ -3137,7 +3185,7 @@ class Trio extends tupla_1.Tupla {
 }
 exports.Trio = Trio;
 
-},{"../tupla":55}],66:[function(require,module,exports){
+},{"../tupla":57}],68:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Unario = void 0;
@@ -3163,7 +3211,7 @@ class Unario {
 }
 exports.Unario = Unario;
 
-},{}],67:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Variavel = void 0;
@@ -3186,7 +3234,7 @@ class Variavel {
 }
 exports.Variavel = Variavel;
 
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Vetor = void 0;
@@ -3221,7 +3269,7 @@ class Vetor {
 }
 exports.Vetor = Vetor;
 
-},{"./comentario-como-construto":25,"./separador":51}],69:[function(require,module,exports){
+},{"./comentario-como-construto":26,"./separador":53}],71:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ErroEmTempoDeExecucao = void 0;
@@ -3236,7 +3284,7 @@ class ErroEmTempoDeExecucao extends Error {
 }
 exports.ErroEmTempoDeExecucao = ErroEmTempoDeExecucao;
 
-},{}],70:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -3255,7 +3303,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./erro-em-tempo-de-execucao"), exports);
 
-},{"./erro-em-tempo-de-execucao":69}],71:[function(require,module,exports){
+},{"./erro-em-tempo-de-execucao":71}],73:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cyrb53 = cyrb53;
@@ -3299,7 +3347,7 @@ function uuidv4() {
     });
 }
 
-},{}],72:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -3325,7 +3373,11 @@ var TipoNativoSimbolo;
     TipoNativoSimbolo["VAZIO"] = "<palavra reservada vazio ajuda=\"palavra reservada usada para definir fun\u00E7\u00F5es que n\u00E3o retornam valores\">";
 })(TipoNativoSimbolo || (exports.TipoNativoSimbolo = TipoNativoSimbolo = {}));
 function inferirVetor(vetor) {
-    const tiposEmVetor = new Set(vetor.map((elemento) => elemento.constructor.name));
+    const tiposEmVetor = new Set(vetor.map((elemento) => {
+        if (elemento === null || elemento === undefined)
+            return 'nulo';
+        return elemento.constructor.name;
+    }));
     if (tiposEmVetor.size > 1) {
         return 'vetor';
     }
@@ -3421,7 +3473,7 @@ function inferirTipoVariavel(variavel) {
     }
 }
 
-},{"./tipos-de-dados/delegua":74,"./tipos-de-dados/primitivos":75,"./tipos-de-simbolos/delegua":76}],73:[function(require,module,exports){
+},{"./tipos-de-dados/delegua":76,"./tipos-de-dados/primitivos":77,"./tipos-de-simbolos/delegua":78}],75:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InformacaoElementoSintatico = void 0;
@@ -3440,7 +3492,7 @@ class InformacaoElementoSintatico {
 }
 exports.InformacaoElementoSintatico = InformacaoElementoSintatico;
 
-},{}],74:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
@@ -3474,7 +3526,7 @@ exports.default = {
     VETOR_TEXTO: 'texto[]',
 };
 
-},{}],75:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
@@ -3493,7 +3545,7 @@ exports.default = {
     TEXTO: 'string',
 };
 
-},{}],76:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = {
