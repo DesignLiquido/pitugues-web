@@ -88,7 +88,7 @@ const executarTradutor = async function () {
         const retornoAvaliadorSintatico =
             await pituguesWeb.avaliadorSintatico.analisar(retornoLexador);
 
-        const funcao = funcoes[linguagem]
+        const funcao = funcoes[linguagem as keyof typeof funcoes]
         const retornoTradutor = funcao.tradutor.traduzir(retornoAvaliadorSintatico.declaracoes)
 
         if (retornoTradutor) {
@@ -495,7 +495,7 @@ function definirLinguagemPitugues() {
   };
 }
 
-let tempoEsperaMudancas;
+let tempoEsperaMudancas: ReturnType<typeof setInterval> | null = null;
 const configurarAtualizacaoAutomatica = function () {
     let editor = Monaco?.editor.getEditors()[0];
     if (!editor) {
@@ -518,7 +518,7 @@ const configurarAtualizacaoAutomatica = function () {
         }
 
         tempoEsperaMudancas = setInterval(function () {
-            clearTimeout(tempoEsperaMudancas);
+            clearTimeout(tempoEsperaMudancas ?? undefined);
             tempoEsperaMudancas = null;
             analisarCodigo();
         }, 500);
@@ -578,7 +578,7 @@ const configurarLinguagemPitugues = function () {
     Monaco.languages.registerSignatureHelpProvider('pitugues', {
         signatureHelpTriggerCharacters: ['(', ','],
         signatureHelpRetriggerCharacters: [','],
-        provideSignatureHelp: (model, position) => {
+        provideSignatureHelp: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
             
@@ -605,7 +605,7 @@ const configurarLinguagemPitugues = function () {
                         let labelCompleto = prefixo;
                         const parametros: any[] = [];
                         
-                        metodo.argumentos.forEach((arg, index) => {
+                        metodo.argumentos.forEach((arg: any, index: number) => {
                             const inicioParam = labelCompleto.length;
                             const nomeParam = `${arg.nome}${arg.opcional ? '?' : ''}`;
                             labelCompleto += nomeParam;
@@ -664,7 +664,7 @@ const configurarLinguagemPitugues = function () {
 
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         triggerCharacters: ['.'],
-        provideCompletionItems: (model, position) => {
+        provideCompletionItems: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
             
@@ -680,7 +680,7 @@ const configurarLinguagemPitugues = function () {
                         const metodo = documentacaoBiblioteca[nomeMetodo];
                         const argumentos = metodo.argumentos || [];
                         const argsTexto = argumentos
-                            .map((arg, index) => {
+                            .map((arg: any, index: number) => {
                                 const placeholder = `\${${index + 1}:${arg.nome}}`;
                                 return arg.opcional ? placeholder : placeholder;
                             })
@@ -705,7 +705,7 @@ const configurarLinguagemPitugues = function () {
 
     Monaco.languages.registerCompletionItemProvider('pitugues', {
         triggerCharacters: ['.'],
-        provideCompletionItems: (model, position) => {
+        provideCompletionItems: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
             
@@ -721,7 +721,7 @@ const configurarLinguagemPitugues = function () {
                         const metodo = documentacaoBiblioteca[nomeMetodo];
                         const argumentos = metodo.argumentos || [];
                         const argsTexto = argumentos
-                            .map((arg, index) => {
+                            .map((arg: any, index: number) => {
                                 const placeholder = `\${${index + 1}:${arg.nome}}`;
                                 return arg.opcional ? placeholder : placeholder;
                             })
@@ -768,7 +768,7 @@ const configurarLinguagemPitugues = function () {
     });
 
     Monaco.languages.registerHoverProvider('pitugues', {
-        provideHover: function (model, position) {
+        provideHover: function (model: any, position: any) {
             const palavra = model.getWordAtPosition(position);
                 if (!palavra) return { contents: [] };
             
@@ -823,7 +823,7 @@ const configurarLinguagemPitugues = function () {
             
             // Verificar se é o nome de um módulo (sem ponto depois)
             const nomeModulo = palavra.word;
-            const infoModulo = informacoesModulos[nomeModulo];
+            const infoModulo = (informacoesModulos as Record<string, any>)[nomeModulo];
             const documentacaoBiblioteca = documentacoesBibliotecas[nomeModulo];
             
             if (infoModulo || documentacaoBiblioteca) {
@@ -843,7 +843,7 @@ const configurarLinguagemPitugues = function () {
                         : metodos.slice(0, 5);
                     
                     if (metodosExibir.length > 0) {
-                        const listaMetodos = metodosExibir.map(m => `- \`${nomeModulo}.${m}()\``).join('\n');
+                        const listaMetodos = metodosExibir.map((m: string) => `- \`${nomeModulo}.${m}()\``).join('\n');
                         const sufixo = metodos.length > metodosExibir.length 
                             ? `\n\n_...e mais ${metodos.length - metodosExibir.length} métodos_` 
                             : '';
@@ -882,7 +882,7 @@ window.addEventListener("load", () => {
     }
     else if (exemploId) {
         modelo.setValue((window as any).Exemplos[exemploId]);
-        document.querySelector('#titulo-arquivo').innerHTML = `${exemploId}.pitugues`;
+        (document.querySelector('#titulo-arquivo') as HTMLElement).innerHTML = `${exemploId}.pitugues`;
     } else {
         modelo.setValue( '# Digite código em Pituguês aqui, ou utilize o menu do topo superior esquerdo para selecionar exemplos de código em Pituguês.');
     }
@@ -890,20 +890,20 @@ window.addEventListener("load", () => {
     Monaco.editor.setModelLanguage(modelo, 'pitugues');
 });
 
-botaoTraduzir.addEventListener("click", function () {
+botaoTraduzir!.addEventListener("click", function () {
     limparResultadoEditor();
     executarTradutor();
 });
 
-botaoCompartilhar.addEventListener("click", function () {
+botaoCompartilhar!.addEventListener("click", function () {
     compartilharCodigo();
 });
 
-botaoExecutar.addEventListener("click", function () {
+botaoExecutar!.addEventListener("click", function () {
     limparResultadoEditor();
     executarCodigo();
 });
 
-const definirTema = (tema) => {
+const definirTema = (tema: string) => {
     Monaco.editor.setTheme(tema)
 }

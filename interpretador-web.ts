@@ -9,10 +9,10 @@ export class InterpretadorWeb
     constructor(
         diretorioBase: string,
         performance = false,
-        funcaoDeRetorno: Function = null,
-        funcaoDeRetornoMesmaLinha: Function = null
+        funcaoDeRetorno: Function | null = null,
+        funcaoDeRetornoMesmaLinha: Function | null = null
     ) {
-        super(diretorioBase, performance, funcaoDeRetorno, funcaoDeRetornoMesmaLinha);
+        super(diretorioBase, performance, funcaoDeRetorno ?? undefined, funcaoDeRetornoMesmaLinha ?? undefined);
     }
 
     protected async logicaComumImportar(caminho: Literal, linha: number): Promise<DeleguaModulo> {

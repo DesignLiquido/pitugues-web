@@ -20,3 +20,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Claude
+.claude
+CLAUDE.md

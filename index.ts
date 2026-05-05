@@ -44,7 +44,7 @@ export class PituguesWeb {
     tradutorPython = new TradutorPython();
     tradutorAssemblyScript = new TradutorAssemblyScript();
 
-    constructor(nomeArquivo: string, funcaoDeRetorno: Function = null) {
+    constructor(nomeArquivo: string, funcaoDeRetorno: Function | null = null) {
         this.nomeArquivo = nomeArquivo;
         this.funcaoDeRetorno = funcaoDeRetorno || console.log;
 
@@ -119,7 +119,7 @@ export class PituguesWeb {
                     erroLexador.mensagem
                 );
             }
-           return;
+           return { erros: [], resultado: [] };
         }
 
         if (retornoImportador.retornoAvaliadorSintatico.erros.length > 0) {
@@ -130,7 +130,7 @@ export class PituguesWeb {
                     erroAvaliadorSintatico.message
                 );
             }
-            return;
+            return { erros: [], resultado: [] };
         }
 
         const retornoInterpretador = await this.interpretador.interpretar(
