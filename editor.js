@@ -450,7 +450,7 @@ function definirLinguagemPitugues() {
         }
     };
 }
-let tempoEsperaMudancas;
+let tempoEsperaMudancas = null;
 const configurarAtualizacaoAutomatica = function () {
     var _a;
     let editor = Monaco === null || Monaco === void 0 ? void 0 : Monaco.editor.getEditors()[0];
@@ -471,7 +471,7 @@ const configurarAtualizacaoAutomatica = function () {
             clearTimeout(tempoEsperaMudancas);
         }
         tempoEsperaMudancas = setInterval(function () {
-            clearTimeout(tempoEsperaMudancas);
+            clearTimeout(tempoEsperaMudancas !== null && tempoEsperaMudancas !== void 0 ? tempoEsperaMudancas : undefined);
             tempoEsperaMudancas = null;
             analisarCodigo();
         }, 500);
@@ -750,7 +750,7 @@ const configurarLinguagemPitugues = function () {
                         ? infoModulo.metodosDestaque
                         : metodos.slice(0, 5);
                     if (metodosExibir.length > 0) {
-                        const listaMetodos = metodosExibir.map(m => `- \`${nomeModulo}.${m}()\``).join('\n');
+                        const listaMetodos = metodosExibir.map((m) => `- \`${nomeModulo}.${m}()\``).join('\n');
                         const sufixo = metodos.length > metodosExibir.length
                             ? `\n\n_...e mais ${metodos.length - metodosExibir.length} métodos_`
                             : '';

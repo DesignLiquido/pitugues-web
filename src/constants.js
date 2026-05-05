@@ -1,3 +1,4 @@
+"use strict";
 const CODE_SNIPPETS = [
     {
         prefixo: "para",

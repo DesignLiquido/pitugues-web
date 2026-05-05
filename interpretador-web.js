@@ -14,7 +14,7 @@ const pitugues_1 = require("@designliquido/delegua/interpretador/dialetos/pitugu
 const excecoes_1 = require("@designliquido/delegua/excecoes");
 class InterpretadorWeb extends pitugues_1.InterpretadorPitugues {
     constructor(diretorioBase, performance = false, funcaoDeRetorno = null, funcaoDeRetornoMesmaLinha = null) {
-        super(diretorioBase, performance, funcaoDeRetorno, funcaoDeRetornoMesmaLinha);
+        super(diretorioBase, performance, funcaoDeRetorno !== null && funcaoDeRetorno !== void 0 ? funcaoDeRetorno : undefined, funcaoDeRetornoMesmaLinha !== null && funcaoDeRetornoMesmaLinha !== void 0 ? funcaoDeRetornoMesmaLinha : undefined);
     }
     logicaComumImportar(caminho, linha) {
         return __awaiter(this, void 0, void 0, function* () {

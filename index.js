@@ -120,14 +120,14 @@ class PituguesWeb {
                 for (const erroLexador of retornoImportador.retornoLexador.erros) {
                     this.reportar(erroLexador.linha, ` no '${erroLexador.caractere}'`, erroLexador.mensagem);
                 }
-                return;
+                return { erros: [], resultado: [] };
             }
             if (retornoImportador.retornoAvaliadorSintatico.erros.length > 0) {
                 for (const erroAvaliadorSintatico of retornoImportador
                     .retornoAvaliadorSintatico.erros) {
                     this.erro(erroAvaliadorSintatico.simbolo, erroAvaliadorSintatico.message);
                 }
-                return;
+                return { erros: [], resultado: [] };
             }
             const retornoInterpretador = yield this.interpretador.interpretar(retornoImportador.retornoAvaliadorSintatico.declaracoes, manterAmbiente);
             if (retornoInterpretador.erros.length > 0) {
