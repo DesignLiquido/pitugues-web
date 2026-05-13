@@ -18603,29 +18603,17 @@ function simboloAtual(interpretador) {
 function construirModuloDeTestes(interpretador, registro) {
     const modulo = new modulo_1.DeleguaModulo('testes');
     modulo.componentes['afirmar'] = (0, modulo_afirmar_1.construirModuloAfirmar)();
-    modulo.componentes['grupo'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
-        const nome = interpretador.resolverValor(nomeRaw);
-        const funcao = interpretador.resolverValor(funcaoRaw);
-        const suiteAnterior = registro.suiteAtual;
-        registro.suiteAtual = suiteAnterior ? `${suiteAnterior} > ${nome}` : nome;
-        const emDeclaracaoTenteAnterior = interpretador.emDeclaracaoTente;
-        interpretador.emDeclaracaoTente = true;
-        try {
-            await funcao.chamar(interpretador, [], null);
-        }
-        finally {
-            registro.suiteAtual = suiteAnterior;
-            interpretador.emDeclaracaoTente = emDeclaracaoTenteAnterior;
-        }
-    });
-    modulo.componentes['teste'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
-        const nome = interpretador.resolverValor(nomeRaw);
-        const funcao = interpretador.resolverValor(funcaoRaw);
+    async function executarTeste(nome, fn) {
         const inicio = Date.now();
         const emDeclaracaoTenteAnterior = interpretador.emDeclaracaoTente;
         interpretador.emDeclaracaoTente = true;
+        for (const escopo of registro.pilhaEscopos) {
+            for (const h of escopo.antesDeCada) {
+                await h.chamar(interpretador, [], null);
+            }
+        }
         try {
-            await funcao.chamar(interpretador, [], null);
+            await fn.chamar(interpretador, [], null);
             registro.resultados.push({
                 nomeSuite: registro.suiteAtual,
                 nomeTeste: nome,
@@ -18643,9 +18631,134 @@ function construirModuloDeTestes(interpretador, registro) {
             });
         }
         finally {
+            for (const escopo of [...registro.pilhaEscopos].reverse()) {
+                for (const h of escopo.depoisDeCada) {
+                    await h.chamar(interpretador, [], null);
+                }
+            }
             interpretador.emDeclaracaoTente = emDeclaracaoTenteAnterior;
         }
+    }
+    async function executarGrupo(nome, fn) {
+        const suiteAnterior = registro.suiteAtual;
+        registro.suiteAtual = suiteAnterior ? `${suiteAnterior} > ${nome}` : nome;
+        const escopo = {
+            antesDeCada: [],
+            antesDeTodos: [],
+            depoisDeCada: [],
+            depoisDeTodos: [],
+            itensColetados: [],
+            temApenas: false,
+        };
+        registro.pilhaEscopos.push(escopo);
+        const modoColetarAnterior = registro.modoColeta;
+        registro.modoColeta = true;
+        const emDeclaracaoTenteAnterior = interpretador.emDeclaracaoTente;
+        interpretador.emDeclaracaoTente = true;
+        try {
+            await fn.chamar(interpretador, [], null);
+            registro.modoColeta = modoColetarAnterior;
+            for (const h of escopo.antesDeTodos) {
+                await h.chamar(interpretador, [], null);
+            }
+            for (const item of escopo.itensColetados) {
+                if (escopo.temApenas && !item.apenas)
+                    continue;
+                if (item.pular) {
+                    if (item.tipo === 'teste') {
+                        registro.resultados.push({
+                            nomeSuite: registro.suiteAtual,
+                            nomeTeste: item.nome,
+                            status: 'pulado',
+                            tempoMs: 0,
+                        });
+                    }
+                    continue;
+                }
+                if (item.tipo === 'teste') {
+                    await executarTeste(item.nome, item.fn);
+                }
+                else {
+                    await executarGrupo(item.nome, item.fn);
+                }
+            }
+            for (const h of escopo.depoisDeTodos) {
+                await h.chamar(interpretador, [], null);
+            }
+        }
+        finally {
+            registro.pilhaEscopos.pop();
+            registro.modoColeta = modoColetarAnterior;
+            registro.suiteAtual = suiteAnterior;
+            interpretador.emDeclaracaoTente = emDeclaracaoTenteAnterior;
+        }
+    }
+    function coletarOuExecutar(tipo, nome, fn, pular, apenas) {
+        if (registro.modoColeta && registro.pilhaEscopos.length > 0) {
+            const escopoAtual = registro.pilhaEscopos[registro.pilhaEscopos.length - 1];
+            if (apenas)
+                escopoAtual.temApenas = true;
+            escopoAtual.itensColetados.push({ tipo, nome, fn, pular, apenas });
+            return Promise.resolve();
+        }
+        if (pular) {
+            if (tipo === 'teste') {
+                registro.resultados.push({
+                    nomeSuite: registro.suiteAtual,
+                    nomeTeste: nome,
+                    status: 'pulado',
+                    tempoMs: 0,
+                });
+            }
+            return Promise.resolve();
+        }
+        return tipo === 'teste' ? executarTeste(nome, fn) : executarGrupo(nome, fn);
+    }
+    const grupoFn = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('grupo', nome, fn, false, false);
     });
+    grupoFn['pular'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('grupo', nome, fn, true, false);
+    });
+    grupoFn['apenas'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('grupo', nome, fn, false, true);
+    });
+    modulo.componentes['grupo'] = grupoFn;
+    const testeFn = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('teste', nome, fn, false, false);
+    });
+    testeFn['pular'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('teste', nome, fn, true, false);
+    });
+    testeFn['apenas'] = new funcao_padrao_1.FuncaoPadrao(2, async function (_visitante, nomeRaw, funcaoRaw) {
+        const nome = interpretador.resolverValor(nomeRaw);
+        const fn = interpretador.resolverValor(funcaoRaw);
+        return coletarOuExecutar('teste', nome, fn, false, true);
+    });
+    modulo.componentes['teste'] = testeFn;
+    function registrarHook(campo) {
+        return new funcao_padrao_1.FuncaoPadrao(1, function (_visitante, funcaoRaw) {
+            const fn = interpretador.resolverValor(funcaoRaw);
+            if (registro.pilhaEscopos.length > 0) {
+                registro.pilhaEscopos[registro.pilhaEscopos.length - 1][campo].push(fn);
+            }
+            return Promise.resolve(null);
+        });
+    }
+    modulo.componentes['antesDeCada'] = registrarHook('antesDeCada');
+    modulo.componentes['antesDeTodos'] = registrarHook('antesDeTodos');
+    modulo.componentes['depoisDeCada'] = registrarHook('depoisDeCada');
+    modulo.componentes['depoisDeTodos'] = registrarHook('depoisDeTodos');
     modulo.componentes['lancarErro'] = new funcao_padrao_1.FuncaoPadrao(1, function (_visitante, mensagemRaw) {
         const mensagem = interpretador.resolverValor(mensagemRaw);
         return Promise.reject(new erro_de_assertiva_1.ErroDeAssertiva(simboloAtual(interpretador), String(mensagem)));
@@ -18661,6 +18774,8 @@ class RegistroTestes {
     constructor() {
         this.resultados = [];
         this.suiteAtual = '';
+        this.pilhaEscopos = [];
+        this.modoColeta = false;
     }
 }
 exports.RegistroTestes = RegistroTestes;
@@ -24708,6 +24823,9 @@ class InterpretadorPitugues extends interpretador_1.Interpretador {
     async visitarExpressaoAcessoMetodo(expressao) {
         const variavelObjeto = await this.avaliar(expressao.objeto);
         const objeto = this.resolverValor(variavelObjeto, true);
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.nomeMetodo}' de um valor nulo.`, expressao.linha));
+        }
         if (objeto instanceof estruturas_1.DescritorTipoClasse) {
             return await objeto.obterEstatico(expressao.nomeMetodo, this);
         }
@@ -24716,6 +24834,9 @@ class InterpretadorPitugues extends interpretador_1.Interpretador {
     async visitarExpressaoAcessoMetodoOuPropriedade(expressao) {
         const variavelObjeto = await this.avaliar(expressao.objeto);
         const objeto = this.resolverValor(variavelObjeto, true);
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.simbolo.lexema}' de um valor nulo.`, expressao.linha));
+        }
         if (objeto instanceof estruturas_1.DescritorTipoClasse) {
             return await objeto.obterEstatico(expressao.simbolo.lexema, this);
         }
@@ -24724,6 +24845,9 @@ class InterpretadorPitugues extends interpretador_1.Interpretador {
     async visitarExpressaoAcessoPropriedade(expressao) {
         const variavelObjeto = await this.avaliar(expressao.objeto);
         const objeto = this.resolverValor(variavelObjeto, true);
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.nomePropriedade}' de um valor nulo.`, expressao.linha));
+        }
         if (objeto instanceof estruturas_1.DescritorTipoClasse) {
             return await objeto.obterEstatico(expressao.nomePropriedade, this);
         }
@@ -26835,7 +26959,7 @@ class InterpretadorBase {
      */
     async visitarExpressaoAgrupamento(expressao) {
         const avaliacaoAgrupamento = await this.avaliar(expressao.expressao);
-        if (avaliacaoAgrupamento.declaracao !== undefined) {
+        if (avaliacaoAgrupamento !== null && avaliacaoAgrupamento.declaracao) {
             return avaliacaoAgrupamento.declaracao;
         }
         return avaliacaoAgrupamento;
@@ -27093,12 +27217,12 @@ class InterpretadorBase {
                     this.tiposNumericos.includes(tipoDireito)) {
                     return Number(valorEsquerdo) + Number(valorDireito);
                 }
+                if (valorEsquerdo === null || valorDireito === null) {
+                    return this.paraTexto(valorEsquerdo) + this.paraTexto(valorDireito);
+                }
                 // TODO: Se tipo for 'qualquer', seria uma boa confiar nos operadores
                 // tradicionais do JavaScript?
-                if (tipoEsquerdo === 'qualquer' ||
-                    tipoDireito === 'qualquer' ||
-                    tipoEsquerdo === 'nulo' ||
-                    tipoDireito === 'nulo') {
+                if (tipoEsquerdo === 'qualquer' || tipoDireito === 'qualquer') {
                     return valorEsquerdo + valorDireito;
                 }
                 return this.paraTexto(valorEsquerdo) + this.paraTexto(valorDireito);
@@ -27654,35 +27778,22 @@ class InterpretadorBase {
         return retornoExecucao;
     }
     async visitarDeclaracaoEscolha(declaracao) {
-        const condicaoEscolha = await this.avaliar(declaracao.identificadorOuLiteral);
-        const valorCondicaoEscolha = this.resolverValor(condicaoEscolha);
-        const caminhos = declaracao.caminhos;
-        const caminhoPadrao = declaracao.caminhoPadrao;
-        let encontrado = false;
         try {
-            for (let i = 0; i < caminhos.length; i++) {
-                const caminho = caminhos[i];
-                for (let j = 0; j < caminho.condicoes.length; j++) {
-                    const condicaoAvaliada = await this.avaliar(caminho.condicoes[j]);
+            const condicaoEscolha = await this.avaliar(declaracao.identificadorOuLiteral);
+            const valorCondicaoEscolha = this.resolverValor(condicaoEscolha);
+            const caminhos = declaracao.caminhos;
+            const caminhoPadrao = declaracao.caminhoPadrao;
+            for (const caminho of caminhos) {
+                for (const condicao of caminho.condicoes) {
+                    const condicaoAvaliada = await this.avaliar(condicao);
                     if (condicaoAvaliada === valorCondicaoEscolha) {
-                        encontrado = true;
-                        try {
-                            await this.executarBloco(caminho.declaracoes);
-                        }
-                        catch (erro) {
-                            this.erros.push({
-                                erroInterno: erro,
-                                linha: declaracao.linha,
-                                hashArquivo: declaracao.hashArquivo,
-                            });
-                            return Promise.reject(erro);
-                        }
+                        return await this.executarBloco(caminho.declaracoes);
                     }
                 }
             }
-            if (caminhoPadrao !== null && !encontrado) {
+            if (caminhoPadrao !== null) {
                 this.registrarRamo?.(declaracao.hashArquivo, declaracao.linha, 'caso-padrao');
-                await this.executarBloco(caminhoPadrao.declaracoes);
+                return await this.executarBloco(caminhoPadrao.declaracoes);
             }
         }
         catch (erro) {
@@ -29409,6 +29520,9 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             variavelObjeto = variavelObjeto.valor;
         }
         const objeto = this.resolverValor(variavelObjeto);
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.nomeMetodo}' de um valor nulo.`, expressao.linha));
+        }
         if (objeto.constructor && objeto.constructor === estruturas_1.ObjetoDeleguaClasse) {
             try {
                 return objeto.obterMetodo(expressao.nomeMetodo);
@@ -29544,6 +29658,9 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             variavelObjeto = retornoQuebra.valor;
         }
         const objeto = this.resolverValor(variavelObjeto, true);
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.simbolo.lexema}' de um valor nulo.`, expressao.linha));
+        }
         // Acesso a método via `super()`: percorre o OReM a partir de `proximaClasse`,
         // vincula o método encontrado à instância original e registra `classeDefinidora`
         // para que chamadas aninhadas a `super()` avancem corretamente na cadeia.
@@ -29713,12 +29830,14 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         // Por exemplo, `objeto1.metodo1().metodo2()`.
         // Como `RetornoQuebra` também possui `valor`, precisamos extrair o
         // valor dele primeiro.
-        if (variavelObjeto.constructor === quebras_1.RetornoQuebra) {
+        if (variavelObjeto && variavelObjeto.constructor === quebras_1.RetornoQuebra) {
             variavelObjeto = variavelObjeto.valor;
         }
         const objeto = this.resolverValor(variavelObjeto);
-        // Outro caso que `instanceof` simplesmente não funciona para casos em Liquido,
-        // então testamos também o nome do construtor.
+        if (objeto === null || objeto === undefined) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(undefined, `Não é possível acessar a propriedade '${expressao.nomePropriedade}' de um valor nulo.`, expressao.linha));
+        }
+        // A partir daqui, o interpretador sabe que 'objeto' não é nulo.
         if (objeto.constructor === estruturas_1.ObjetoDeleguaClasse) {
             return objeto.obterMetodo(expressao.nomePropriedade) || null;
         }
