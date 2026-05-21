@@ -5679,7 +5679,11 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
                 return await this.resolverCadeiaChamadas(chamada);
             case delegua_2.default.PONTO:
                 this.avancarEDevolverAnterior();
-                this.verificarSeSimboloAtualEIgualA();
+                const simboloAtual = this.simbolos[this.atual];
+                if (!simboloAtual ||
+                    !/^[A-Za-z_$À-ÿ][A-Za-z0-9_$À-ÿ]*$/.test(simboloAtual.lexema)) {
+                    throw this.erro(simboloAtual, "Esperado nome do método ou propriedade após o '.'");
+                }
                 const nome = this.avancarEDevolverAnterior();
                 let tipoInferido = expressaoAnterior.tipo;
                 // Se não for um dicionário anônimo (ou seja, ser variável ou constante com nome)
@@ -9530,7 +9534,7 @@ class AvaliadorSintaticoPitugues {
                 expressao = await this.finalizarChamada(expressao);
             }
             else if (this.verificarSeSimboloAtualEIgualA(pitugues_2.default.PONTO)) {
-                const nome = this.consumir(pitugues_2.default.IDENTIFICADOR, "Esperado nome do método após '.'.");
+                const nome = this.consumir(pitugues_2.default.IDENTIFICADOR, "Esperado nome do método ou propriedade após o '.'");
                 expressao = new construtos_1.AcessoMetodoOuPropriedade(this.hashArquivo, expressao, nome);
             }
             else if (this.verificarSeSimboloAtualEIgualA(pitugues_2.default.COLCHETE_ESQUERDO)) {
@@ -29050,8 +29054,9 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         });
     }
     async logicaComumExecucaoEnquanto(enquanto, acumularRetornos) {
-        let retornoExecucao = undefined;
         const retornos = [];
+        let retornoExecucao = undefined;
+        let iteracoes = 0;
         while ((acumularRetornos ||
             !(retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.Quebra)) &&
             this.eVerdadeiro(await this.avaliar(enquanto.condicao))) {
@@ -29059,6 +29064,7 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                 if (this.funcaoVerificarIteracao) {
                     await this.funcaoVerificarIteracao();
                 }
+                await this.cederControle(++iteracoes);
                 retornoExecucao = await this.executar(enquanto.corpo);
                 if (retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.SustarQuebra) {
                     if (acumularRetornos) {
@@ -29097,13 +29103,15 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         return this.logicaComumExecucaoEnquanto(declaracao, false);
     }
     async logicaComumExecucaoFazer(fazer, acumularRetornos) {
-        let retornoExecucao = undefined;
         const retornos = [];
+        let retornoExecucao = undefined;
+        let iteracoes = 0;
         do {
             try {
                 if (this.funcaoVerificarIteracao) {
                     await this.funcaoVerificarIteracao();
                 }
+                await this.cederControle(++iteracoes);
                 retornoExecucao = await this.executar(fazer.caminhoFazer);
                 if (retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.SustarQuebra) {
                     if (acumularRetornos) {
@@ -29149,8 +29157,9 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         if (declaracaoInicializador !== null && declaracaoInicializador !== undefined) {
             await this.avaliar(declaracaoInicializador);
         }
-        let retornoExecucao = undefined;
         const retornos = [];
+        let retornoExecucao = undefined;
+        let iteracoes = 0;
         while (acumularRetornos ||
             !(retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.Quebra)) {
             if (para.condicao !== null && !this.eVerdadeiro(await this.avaliar(para.condicao))) {
@@ -29159,6 +29168,7 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             if (this.funcaoVerificarIteracao) {
                 await this.funcaoVerificarIteracao();
             }
+            await this.cederControle(++iteracoes);
             retornoExecucao = await this.executar(para.corpo);
             if (retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.SustarQuebra) {
                 if (acumularRetornos) {
@@ -29190,6 +29200,24 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
     async visitarDeclaracaoPara(declaracao) {
         return this.logicaComumExecucaoPara(declaracao, false);
     }
+    /**
+    * Define a variável de iteração de um laço 'para cada' (ou compreensão de lista) SEM coerção de tipo. A iteração sempre preserva o valor original do elemento, independentemente do tipo inferido para a variável.
+    */
+    definirVariavelIteracao(variavelIteracao, valorElemento) {
+        if (variavelIteracao instanceof construtos_1.Variavel) {
+            this.pilhaEscoposExecucao.definirVariavel(variavelIteracao.simbolo.lexema, valorElemento, 'qualquer');
+        }
+        else if (variavelIteracao instanceof construtos_1.Dupla) {
+            const nomePrimeiro = variavelIteracao.primeiro?.valor?.toString?.() ?? variavelIteracao.primeiro?.lexema;
+            const nomeSegundo = variavelIteracao.segundo?.valor?.toString?.() ?? variavelIteracao.segundo?.lexema;
+            if (nomePrimeiro) {
+                this.pilhaEscoposExecucao.definirVariavel(nomePrimeiro, valorElemento.primeiro?.valor ?? valorElemento.primeiro, 'qualquer');
+            }
+            if (nomeSegundo) {
+                this.pilhaEscoposExecucao.definirVariavel(nomeSegundo, valorElemento.segundo?.valor ?? valorElemento.segundo, 'qualquer');
+            }
+        }
+    }
     async logicaComumExecucaoParaCada(paraCada, acumularRetornos) {
         let retornoExecucao = undefined;
         // Posição atual precisa ser reiniciada, pois pode estar dentro de outro
@@ -29210,6 +29238,7 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
             return Promise.reject("Variável ou literal provida em instrução 'para cada' não é um vetor.");
         }
         const retornos = [];
+        let iteracoes = 0;
         while ((acumularRetornos ||
             !(retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.Quebra)) &&
             paraCada.posicaoAtual < valorVetorOuDicionarioResolvido.length) {
@@ -29217,23 +29246,8 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
                 if (this.funcaoVerificarIteracao) {
                     await this.funcaoVerificarIteracao();
                 }
-                if (paraCada.variavelIteracao instanceof construtos_1.Variavel) {
-                    this.pilhaEscoposExecucao.definirVariavel(paraCada.variavelIteracao.simbolo.lexema, valorVetorOuDicionarioResolvido[paraCada.posicaoAtual]);
-                }
-                if (paraCada.variavelIteracao instanceof construtos_1.Dupla) {
-                    const valorComoDupla = valorVetorOuDicionarioResolvido[paraCada.posicaoAtual];
-                    const nomesVariaveis = await Promise.all([
-                        this.avaliar(paraCada.variavelIteracao.primeiro),
-                        this.avaliar(paraCada.variavelIteracao.segundo),
-                    ]);
-                    const valoresDupla = await Promise.all([
-                        this.avaliar(valorComoDupla.primeiro),
-                        this.avaliar(valorComoDupla.segundo),
-                    ]);
-                    // nomesVariaveis são strings (nomes das variáveis)
-                    this.pilhaEscoposExecucao.definirVariavel(String(nomesVariaveis[0]), valoresDupla[0]);
-                    this.pilhaEscoposExecucao.definirVariavel(String(nomesVariaveis[1]), valoresDupla[1]);
-                }
+                await this.cederControle(++iteracoes);
+                this.definirVariavelIteracao(paraCada.variavelIteracao, valorVetorOuDicionarioResolvido[paraCada.posicaoAtual]);
                 retornoExecucao = await this.executar(paraCada.corpo);
                 if (retornoExecucao && retornoExecucao.valorRetornado instanceof quebras_1.SustarQuebra) {
                     if (acumularRetornos) {
