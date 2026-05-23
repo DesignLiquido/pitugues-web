@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "lint": "eslint .",
     "copiar-arquivos": "yarn copy-files-from-to --force",
     "empacotar": "yarn del-cli ./dist && yarn gerar-css && yarn gerar-web && yarn copiar-arquivos",
     "gerar-css": "yarn sass scss/estilos.scss:./dist/estilos.css scss/codigos.scss:./dist/codigos.css",
@@ -14,7 +13,6 @@
     "testar": "yarn empacotar && yarn servir"
   },
   "dependencies": {
-    "@chakra-ui/react": "^2.10.9",
     "@designliquido/delegua": "^1.23.2",
     "@designliquido/delegua-criptografia": "^0.3.4",
     "@designliquido/delegua-estatistica": "^0.1.1",
@@ -22,23 +20,15 @@
     "@designliquido/delegua-json": "^0.3.0",
     "@designliquido/delegua-matematica": "^0.4.0",
     "@designliquido/delegua-tempo": "^1.1.1",
-    "@monaco-editor/react": "^4.7.0",
-    "body-parser": "^2.2.0",
-    "cors": "^2.8.5",
     "dompurify": "^3.2.7",
-    "framer-motion": "^12.16.0",
     "monaco-editor": "^0.48.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
     "@types/node": "^24.0.15",
     "browserify": "^17.0.1",
     "chokidar": "^4.0.3",
     "copy-files-from-to": "^3.12.1",
     "del-cli": "^7.0.0",
-    "eslint": "^9.25.0",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
     "gh-pages": "^6.3.0",
     "globals": "^16.0.0",
     "http-server": "^14.1.1",
