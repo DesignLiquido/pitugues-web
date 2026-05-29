@@ -1,4 +1,4 @@
-<html lang="pt">
+<html lang="pt-BR">
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -11,10 +11,9 @@
   <link rel="icon" href="./icones/favicon-128.png" sizes="128x128">
   <link rel="icon" href="./icones/favicon-180.png" sizes="180x180">
   <link rel="icon" href="./icones/favicon-192.png" sizes="192x192">
-  <link rel="stylesheet" href="./estilos.css" />
+  <link href="./estilos.css" rel="stylesheet">
   <link rel="stylesheet" href="./codigos.css" />
   <link href="https://fonts.googleapis.com/css?family=Roboto+Mono&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-RD4Q6L45K6"></script>
   <script>
@@ -26,53 +25,67 @@
   </script>
 </head>
 
-<body>
-  <div id="mySidenav" class="sidenav">
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="index.html">Editor</a>
-    <a href="exemplos.html">Exemplos</a>
-  </div>
+<body class="font-mono text-black h-full flex flex-col overflow-hidden">
+	<div id="mySidenav" class="fixed z-50 top-0 left-0 h-full w-0 overflow-x-hidden bg-white border-r border-[#d9d9d9] transition-all duration-300">
+    <a href="javascript:void(0)" class="absolute top-2 right-4 text-4xl hover:text-black" onclick="closeNav()">&times;</a>
 
-  <nav>
-    <div class="navbar-esquerda">
-      <div onclick="openNav()">
-        <div class="icone-burger"></div>
-        <div class="icone-burger"></div>
-        <div class="icone-burger"></div>
+    <div class="mt-16 flex flex-col gap-6 px-8">
+      <div class="flex flex-col gap-2">
+        <a href="index.html" class="py-2 text-xl text-gray-700 hover:bg-gray-100">Editor</a>
+        <a href="exemplos.html" class="py-2 text-xl text-gray-700 hover:bg-gray-100">Exemplos</a>
       </div>
-    </div>
-    <div class="navbar-central">
-      <p id="titulo-arquivo">index.pitu</p>
-    </div>
-    <select onchange="definirTema(this.value)" id="temaEditor">
-      <option value="vs">Padrão</option>
-      <option value="vs-dark">Visual Studio Escuro</option>
-      <option value="hc-black">Escuro</option>
-      <option value="hc-light">Claro</option>
-    </select>
-    <div class="navbar-direita">
-        <select id="linguagem">
+
+      <hr class="border-gray-200">
+
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-500 mb-1">Tema</label>
+          <select onchange="definirTema(this.value)" id="temaEditor" class="w-full p-2 border border-gray-300 rounded text-sm">
+	          <option value="vs">Padrão</option>
+	          <option value="vs-dark">Visual Studio Escuro</option>
+	          <option value="hc-black">Escuro</option>
+	          <option value="hc-light">Claro</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-500 mb-1">Linguagem</label>
+          <select id="linguagem" class="w-full p-2 border border-gray-300 rounded text-sm">
             <option selected>JavaScript</option>
             <option>Python</option>
-        </select>
-        <div>
-            <button id="botaoTraduzir" title="Traduzir">
-							<i class="fa fa-language" style="font-size:20px;"></i>
-            </button>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            <button id="botaoCompartilhar" title="Compartilhar">
-							<i class="fa fa-share-alt" style="font-size:20px;"></i>
-            </button>
+  <nav class="flex items-center p-2 border-b border-[#d9d9d9] w-full">
+	  <div class="flex-1 flex justify-start">
+        <div class="cursor-pointer p-1 rounded hover:bg-gray-200" onclick="openNav()">
+            <i data-lucide="menu"></i>
+        </div>
+    </div>
 
-            <button id="botaoExecutar" title="Executar">
-							<i class="fa fa-play" style="font-size:20px;"></i>
-            </button>
-          </div>
+    <p id="titulo-arquivo" class="font-bold truncate text-center shrink-0">
+        index.pitu
+    </p>
+
+    <div class="flex-1 flex justify-end space-x-5">
+      <button id="botaoTraduzir" title="Traduzir" class="p-1 hover:bg-gray-200 rounded cursor-pointer"><i data-lucide="languages"></i></button>
+      <button id="botaoCompartilhar" title="Compartilhar" class="p-1 hover:bg-gray-200 rounded cursor-pointer"><i data-lucide="share-2"></i></button>
+      <button id="botaoExecutar" title="Executar" class="p-1 hover:bg-gray-200 rounded cursor-pointer"><i data-lucide="play"></i></button>
     </div>
   </nav>
 
-  <div id="editor" style="z-index: 0 !important;"></div>
-  <div id="resultadoEditor" aria-live="polite"></div>
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    <div id="editor" class="flex-2 min-h-[50%] border-r border-gray-300"></div>
+    <div id="resultadoEditor" class="flex-1 min-h-[30%] overflow-y-auto p-4 bg-gray-50" aria-live="polite"></div>
+  </main>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    lucide.createIcons();
+  </script>
 
   <script>var exports = {};</script>
   <script src="./src/constants.js"></script>
