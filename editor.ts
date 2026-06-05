@@ -7,6 +7,12 @@ const botaoExecutar = document.getElementById("botaoExecutar");
 
 const Pitugues = (window as any).Pitugues;
 const Monaco = (window as any).monaco;
+const NotyfGlobal = (window as any).Notyf;
+
+const notyf = new NotyfGlobal({
+  duration: 3000,
+  position: { x: 'right', y: 'bottom' },
+});
 
 enum MarkerSeverity {
     Hint = 1,
@@ -138,60 +144,28 @@ const executarCodigo = async function () {
     }
 };
 
-const mostrarToastNotificacao = function(mensagem: string, sucesso: boolean = true) {
-    const toastExistente = document.querySelector('.toast-notificacao');
-    if (toastExistente) {
-        toastExistente.remove();
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'toast-notificacao';
-    if (!sucesso) {
-        toast.style.backgroundColor = '#f44336';
-    }
-
-    toast.innerHTML = `
-        ${mensagem}
-        <span class="fechar-toast" onclick="this.parentElement.remove()">×</span>
-    `;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        toast.classList.add('mostrar');
-    }, 10);
-
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.classList.remove('mostrar');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 300);
-        }
-    }, 3000);
-};
-
 const compartilharCodigo = function () {
-    try {
-        const modelo = Monaco.editor.getModels()[0];
-        const codigo = modelo.getValue();
+  try {
+    const modelo = Monaco.editor.getModels()[0];
+    const codigo = modelo.getValue();
+    const codigoBase64 = btoa(codigo);
+    const baseUrl = window.location.origin + window.location.pathname;
+    const linkCompartilhamento = `${baseUrl}?codigo=${codigoBase64}`;
 
-        const codigoBase64 = btoa(codigo);
-
-        const baseUrl = window.location.origin + window.location.pathname;
-        const linkCompartilhamento = `${baseUrl}?codigo=${codigoBase64}`;
-
-        navigator.clipboard.writeText(linkCompartilhamento).then(() => {
-            mostrarToastNotificacao("✓ Link copiado para área de transferência!", true);
-        }).catch(() => {
-            mostrarToastNotificacao("Link: " + linkCompartilhamento, true);
-        });
-
-    } catch (error) {
-        mostrarToastNotificacao("Erro ao gerar link de compartilhamento", false);
-    }
+		navigator.clipboard.writeText(linkCompartilhamento)
+			.then(() => {
+				notyf.success("Link copiado!");
+			})
+			.catch(() => {
+				notyf.error("O navegador bloqueou a cópia automática.");
+				window.prompt(
+					"Copie o link manualmente abaixo:",
+					linkCompartilhamento
+				);
+      });
+  } catch (error) {
+    notyf.error("Erro ao gerar link de compartilhamento");
+  }
 };
 
 const analisarCodigo = async function () {
@@ -567,64 +541,64 @@ const configurarLinguagemPitugues = function () {
     Monaco.languages.register({ id: 'pitugues',
         extensions: ['.pitu'],
         aliases: ['Pituguês', 'language-generation'],
-        mimetypes: ['application/pitugues'] 
+        mimetypes: ['application/pitugues']
     });
 
 
 
     Monaco.languages.setMonarchTokensProvider('pitugues', definirLinguagemPitugues());
 
-    
+
     Monaco.languages.registerSignatureHelpProvider('pitugues', {
         signatureHelpTriggerCharacters: ['(', ','],
         signatureHelpRetriggerCharacters: [','],
         provideSignatureHelp: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
-            
+
             // Encontrar a chamada de função mais recente antes do cursor
             // Match pattern: biblioteca.metodo( ou apenas metodo(
             const matchFuncao = textoAntesCursor.match(/(\w+)\.(\w+)\([^)]*$/);
-            
+
             if (matchFuncao) {
                 const nomeBiblioteca = matchFuncao[1];
                 const nomeMetodo = matchFuncao[2];
                 const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
-                
+
                 if (documentacaoBiblioteca) {
                     const metodo = documentacaoBiblioteca[nomeMetodo];
-                    
+
                     if (metodo && metodo.argumentos) {
                         // Contar quantos argumentos já foram digitados (contando vírgulas)
                         const dentroParenteses = textoAntesCursor.split('(').pop();
                         const numeroVirgulas = (dentroParenteses.match(/,/g) || []).length;
                         const parametroAtivo = numeroVirgulas;
-                        
+
                         // Construir o label e calcular os ranges para cada parâmetro
                         const prefixo = `${nomeBiblioteca}.${nomeMetodo}(`;
                         let labelCompleto = prefixo;
                         const parametros: any[] = [];
-                        
+
                         metodo.argumentos.forEach((arg: any, index: number) => {
                             const inicioParam = labelCompleto.length;
                             const nomeParam = `${arg.nome}${arg.opcional ? '?' : ''}`;
                             labelCompleto += nomeParam;
                             const fimParam = labelCompleto.length;
-                            
+
                             parametros.push({
                                 label: [inicioParam, fimParam], // Range do parâmetro no label
                                 documentation: arg.descricao || `${arg.nome}: ${arg.tipo || 'qualquer'}`
                             });
-                            
+
                             // Adicionar vírgula se não for o último parâmetro
                             if (index < metodo.argumentos.length - 1) {
                                 labelCompleto += ', ';
                             }
                         });
-                        
+
                         const retornoTexto = metodo.tipoRetorno ? ` → ${metodo.tipoRetorno}` : '';
                         labelCompleto += `)${retornoTexto}`;
-                        
+
                         // Extrair apenas a primeira descrição do markdown (após o título)
                         let descricaoSimples = '';
                         if (metodo.documentacao) {
@@ -638,7 +612,7 @@ const configurarLinguagemPitugues = function () {
                                 }
                             }
                         }
-                        
+
                         return {
                             value: {
                                 signatures: [{
@@ -654,7 +628,7 @@ const configurarLinguagemPitugues = function () {
                     }
                 }
             }
-            
+
             return {
                 value: { signatures: [], activeSignature: 0, activeParameter: 0 },
                 dispose: () => {}
@@ -667,14 +641,14 @@ const configurarLinguagemPitugues = function () {
         provideCompletionItems: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
-            
+
             // Verificar se estamos após um ponto (ex: criptografia.)
             const matchBiblioteca = textoAntesCursor.match(/(\w+)\.(\w*)$/);
-            
+
             if (matchBiblioteca) {
                 const nomeBiblioteca = matchBiblioteca[1];
                 const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
-                
+
                 if (documentacaoBiblioteca) {
                     const sugestoesMetodos = Object.keys(documentacaoBiblioteca).map(nomeMetodo => {
                         const metodo = documentacaoBiblioteca[nomeMetodo];
@@ -685,7 +659,7 @@ const configurarLinguagemPitugues = function () {
                                 return arg.opcional ? placeholder : placeholder;
                             })
                             .join(', ');
-                        
+
                         return {
                             label: nomeMetodo,
                             kind: 1, // Method
@@ -695,7 +669,7 @@ const configurarLinguagemPitugues = function () {
                             detail: metodo.tipoRetorno ? `→ ${metodo.tipoRetorno}` : ''
                         };
                     });
-                    
+
                     return { suggestions: sugestoesMetodos };
                 }
             }
@@ -708,14 +682,14 @@ const configurarLinguagemPitugues = function () {
         provideCompletionItems: (model: any, position: any) => {
             const linha = model.getLineContent(position.lineNumber);
             const textoAntesCursor = linha.substring(0, position.column - 1);
-            
+
             // Verificar se estamos após um ponto (ex: criptografia.)
             const matchBiblioteca = textoAntesCursor.match(/(\w+)\.(\w*)$/);
-            
+
             if (matchBiblioteca) {
                 const nomeBiblioteca = matchBiblioteca[1];
                 const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
-                
+
                 if (documentacaoBiblioteca) {
                     const sugestoesMetodos = Object.keys(documentacaoBiblioteca).map(nomeMetodo => {
                         const metodo = documentacaoBiblioteca[nomeMetodo];
@@ -726,7 +700,7 @@ const configurarLinguagemPitugues = function () {
                                 return arg.opcional ? placeholder : placeholder;
                             })
                             .join(', ');
-                        
+
                         return {
                             label: nomeMetodo,
                             kind: 1, // Method
@@ -736,7 +710,7 @@ const configurarLinguagemPitugues = function () {
                             detail: metodo.tipoRetorno ? `→ ${metodo.tipoRetorno}` : ''
                         };
                     });
-                    
+
                     return { suggestions: sugestoesMetodos };
                 }
             }
@@ -771,7 +745,7 @@ const configurarLinguagemPitugues = function () {
         provideHover: function (model: any, position: any) {
             const palavra = model.getWordAtPosition(position);
                 if (!palavra) return { contents: [] };
-            
+
             // Verificar primitivas nativas
             const primitiva = primitivas.find(p => p.nome === palavra?.word)
             if (primitiva) {
@@ -783,86 +757,86 @@ const configurarLinguagemPitugues = function () {
                     ]
                 }
             }
-            
+
             // Verificar métodos de bibliotecas (ex: criptografia.md5)
             // Precisamos verificar se há um ponto antes da palavra atual
             const linha = model.getLineContent(position.lineNumber);
             const inicioColuna = palavra.startColumn - 1;
-            
+
             // Verificar se há um ponto antes da palavra
             if (inicioColuna > 0 && linha[inicioColuna - 1] === '.') {
                 // Procurar o nome da biblioteca antes do ponto
                 const textoAntesPonto = linha.substring(0, inicioColuna - 1);
                 const matchBiblioteca = textoAntesPonto.match(/(\w+)$/);
-                
+
                 if (matchBiblioteca) {
                     const nomeBiblioteca = matchBiblioteca[1];
                     const nomeMetodo = palavra.word;
                     const documentacaoBiblioteca = documentacoesBibliotecas[nomeBiblioteca];
-                    
+
                     if (documentacaoBiblioteca && nomeMetodo) {
                         const metodo = documentacaoBiblioteca[nomeMetodo];
                         if (metodo) {
                             const contents = [
                                 { value: `**${nomeBiblioteca}.${nomeMetodo}**` }
                             ];
-                            
+
                             if (metodo.documentacao) {
                                 contents.push({ value: metodo.documentacao });
                             }
-                            
+
                             if (metodo.exemploCodigo) {
                                 contents.push({ value: `\`\`\`delegua\n${metodo.exemploCodigo}\n\`\`\`` });
                             }
-                            
+
                             return { contents };
                         }
                     }
                 }
             }
-            
+
             // Verificar se é o nome de um módulo (sem ponto depois)
             const nomeModulo = palavra.word;
             const infoModulo = (informacoesModulos as Record<string, any>)[nomeModulo];
             const documentacaoBiblioteca = documentacoesBibliotecas[nomeModulo];
-            
+
             if (infoModulo || documentacaoBiblioteca) {
                 const contents = [
                     { value: `**${nomeModulo}** _(módulo)_` }
                 ];
-                
+
                 if (infoModulo?.descricao) {
                     contents.push({ value: infoModulo.descricao });
                 }
-                
+
                 // Listar métodos disponíveis
                 if (documentacaoBiblioteca) {
                     const metodos = Object.keys(documentacaoBiblioteca);
-                    const metodosExibir = infoModulo?.metodosDestaque?.length > 0 
-                        ? infoModulo.metodosDestaque 
+                    const metodosExibir = infoModulo?.metodosDestaque?.length > 0
+                        ? infoModulo.metodosDestaque
                         : metodos.slice(0, 5);
-                    
+
                     if (metodosExibir.length > 0) {
                         const listaMetodos = metodosExibir.map((m: string) => `- \`${nomeModulo}.${m}()\``).join('\n');
-                        const sufixo = metodos.length > metodosExibir.length 
-                            ? `\n\n_...e mais ${metodos.length - metodosExibir.length} métodos_` 
+                        const sufixo = metodos.length > metodosExibir.length
+                            ? `\n\n_...e mais ${metodos.length - metodosExibir.length} métodos_`
                             : '';
-                        contents.push({ 
-                            value: `**Métodos disponíveis:**\n${listaMetodos}${sufixo}` 
+                        contents.push({
+                            value: `**Métodos disponíveis:**\n${listaMetodos}${sufixo}`
                         });
                     }
                 }
-                
+
                 if (infoModulo?.repositorio) {
                     contents.push({ value: `[📦 Repositório](${infoModulo.repositorio})` });
                 }
-                
+
                 return { contents };
             }
-            
+
             return { contents: [] };
         }
-    
+
     })
 }
 
