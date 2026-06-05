@@ -6,7 +6,7 @@
   "scripts": {
     "copiar-arquivos": "yarn copy-files-from-to --force",
     "empacotar": "yarn del-cli ./dist && yarn gerar-css && yarn gerar-web && yarn copiar-arquivos",
-    "gerar-css": "yarn sass scss/codigos.scss:./dist/codigos.css && tailwindcss -i ./estilos.css -o ./dist/estilos.css",
+    "gerar-css": "tailwindcss -i ./estilos.css -o ./dist/estilos.css",
     "gerar-web": "yarn tsc && yarn browserify dist/index.js --s Pitugues -o dist/pitugues.js && yarn browserify dist/primitivas/index.js --s PrimitivasDelegua -o dist/primitivas.js",
     "publicar": "yarn empacotar && yarn gh-pages -d dist",
     "servir": "yarn http-server ./dist -o -c-1",
@@ -22,21 +22,18 @@
     "@designliquido/delegua-tempo": "^1.1.1",
     "@tailwindcss/cli": "^4.3.0",
     "dompurify": "^3.2.7",
-    "lucide": "^1.17.0",
     "monaco-editor": "^0.48.0",
+    "notyf": "^3.10.0",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
     "browserify": "^17.0.1",
-    "chokidar": "^4.0.3",
     "copy-files-from-to": "^3.12.1",
     "del-cli": "^7.0.0",
     "gh-pages": "^6.3.0",
-    "globals": "^16.0.0",
     "http-server": "^14.1.1",
     "process": "^0.11.10",
-    "sass": "^1.93.2",
     "typescript": "^6.0.3"
   },
   "overrides": {
@@ -54,10 +51,6 @@
     {
       "from": "favicon.ico",
       "to": "dist/favicon.ico"
-    },
-    {
-      "from": "./icones/**",
-      "to": "dist/icones/"
     },
     {
       "from": "node_modules/monaco-editor/min/vs/**/*",
