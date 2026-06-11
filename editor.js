@@ -15,6 +15,11 @@ const botaoCompartilhar = document.getElementById("botaoCompartilhar");
 const botaoExecutar = document.getElementById("botaoExecutar");
 const Pitugues = window.Pitugues;
 const Monaco = window.monaco;
+const NotyfGlobal = window.Notyf;
+const notyf = new NotyfGlobal({
+    duration: 3000,
+    position: { x: 'right', y: 'bottom' },
+});
 var MarkerSeverity;
 (function (MarkerSeverity) {
     MarkerSeverity[MarkerSeverity["Hint"] = 1] = "Hint";
@@ -129,35 +134,6 @@ const executarCodigo = function () {
         }
     });
 };
-const mostrarToastNotificacao = function (mensagem, sucesso = true) {
-    const toastExistente = document.querySelector('.toast-notificacao');
-    if (toastExistente) {
-        toastExistente.remove();
-    }
-    const toast = document.createElement('div');
-    toast.className = 'toast-notificacao';
-    if (!sucesso) {
-        toast.style.backgroundColor = '#f44336';
-    }
-    toast.innerHTML = `
-        ${mensagem}
-        <span class="fechar-toast" onclick="this.parentElement.remove()">×</span>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-        toast.classList.add('mostrar');
-    }, 10);
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.classList.remove('mostrar');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 300);
-        }
-    }, 3000);
-};
 const compartilharCodigo = function () {
     try {
         const modelo = Monaco.editor.getModels()[0];
@@ -165,14 +141,17 @@ const compartilharCodigo = function () {
         const codigoBase64 = btoa(codigo);
         const baseUrl = window.location.origin + window.location.pathname;
         const linkCompartilhamento = `${baseUrl}?codigo=${codigoBase64}`;
-        navigator.clipboard.writeText(linkCompartilhamento).then(() => {
-            mostrarToastNotificacao("✓ Link copiado para área de transferência!", true);
-        }).catch(() => {
-            mostrarToastNotificacao("Link: " + linkCompartilhamento, true);
+        navigator.clipboard.writeText(linkCompartilhamento)
+            .then(() => {
+            notyf.success("Link copiado!");
+        })
+            .catch(() => {
+            notyf.error("O navegador bloqueou a cópia automática.");
+            window.prompt("Copie o link manualmente abaixo:", linkCompartilhamento);
         });
     }
     catch (error) {
-        mostrarToastNotificacao("Erro ao gerar link de compartilhamento", false);
+        notyf.error("Erro ao gerar link de compartilhamento");
     }
 };
 const analisarCodigo = function () {
