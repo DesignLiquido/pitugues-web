@@ -13,7 +13,7 @@
     "testar": "yarn empacotar && yarn servir"
   },
   "dependencies": {
-    "@designliquido/delegua": "^1.25.0",
+    "@designliquido/delegua": "^1.25.1",
     "@designliquido/delegua-criptografia": "^0.3.4",
     "@designliquido/delegua-estatistica": "^0.1.1",
     "@designliquido/delegua-fisica": "^0.1.0",
