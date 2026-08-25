@@ -4750,6 +4750,17 @@ class AvaliadorSintaticoBase {
         this.blocos = 0;
     }
     erro(simbolo, mensagemDeErro, codigoDiagnostico, simboloRelacionado) {
+        // Chamadores costumam passar `this.simbolos[this.atual]` diretamente. Se o
+        // cursor já passou do último símbolo (ex.: código termina logo após um
+        // token sem ';' ou EOF explícito), esse acesso devolve `undefined`, e o
+        // construtor de `ErroAvaliadorSintatico` quebraria ao ler `simbolo.hashArquivo`.
+        // Mesma lógica de fallback já usada em `consumir()`.
+        if (!simbolo) {
+            simbolo =
+                this.simbolos.length === 0
+                    ? { hashArquivo: this.hashArquivo, linha: 1 }
+                    : this.simbolos[this.simbolos.length - 1];
+        }
         const excecao = new erro_avaliador_sintatico_1.ErroAvaliadorSintatico(simbolo, mensagemDeErro, codigoDiagnostico, simboloRelacionado);
         return excecao;
     }
@@ -4801,6 +4812,22 @@ class AvaliadorSintaticoBase {
             }
         }
         return false;
+    }
+    /**
+     * Avança o cursor por quaisquer símbolos de comentário (de linha ou
+     * multilinha) consecutivos, descartando-os. Usado em construtos onde
+     * comentários podem aparecer entre elementos, mas não fazem sentido
+     * como parte da árvore sintática resultante (ex.: dicionários).
+     */
+    pularComentarios() {
+        // Os tipos de símbolo de comentário não fazem parte do conjunto reduzido
+        // de `tiposDeSimbolos` importado nesta classe base, por isso são usados
+        // aqui como literais de texto (seus valores são idênticos às chaves do
+        // conjunto completo, definido em `tipos-de-simbolos/delegua.ts`).
+        while (this.simbolos[this.atual].tipo === 'COMENTARIO' ||
+            this.simbolos[this.atual].tipo === 'LINHA_COMENTARIO') {
+            this.avancarEDevolverAnterior();
+        }
     }
     async declaracaoBloco() {
         const simboloInicioBloco = this.consumir(comum_1.default.CHAVE_ESQUERDA, "Esperado '{' para abertura de bloco.");
@@ -5279,18 +5306,22 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         this.avancarEDevolverAnterior();
         const chaves = [];
         const valores = [];
+        this.pularComentarios();
         if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.CHAVE_DIREITA)) {
             return new construtos_1.Dicionario(this.hashArquivo, Number(simboloChaveEsquerda.linha), [], []);
         }
         while (!this.verificarSeSimboloAtualEIgualA(delegua_2.default.CHAVE_DIREITA)) {
             const chave = await this.obterChaveDicionario();
             this.consumir(delegua_2.default.DOIS_PONTOS, "Esperado ':' entre chave e valor.");
+            this.pularComentarios();
             const valor = await this.atribuir();
             chaves.push(chave);
             valores.push(valor);
+            this.pularComentarios();
             if (this.simbolos[this.atual].tipo !== delegua_2.default.CHAVE_DIREITA) {
                 this.consumir(delegua_2.default.VIRGULA, 'Esperado vírgula antes da próxima expressão.');
             }
+            this.pularComentarios();
         }
         return new construtos_1.Dicionario(this.hashArquivo, Number(simboloChaveEsquerda.linha), chaves, valores);
     }
@@ -7266,6 +7297,15 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
         const parametros = [];
         do {
             const parametro = {};
+            if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.CONSTANTE)) {
+                const modificador = this.simbolos[this.atual - 1];
+                if (modificador.lexema === 'fixo') {
+                    parametro.fixo = true;
+                }
+                else {
+                    parametro.imutavel = true;
+                }
+            }
             if (this.verificarSeSimboloAtualEIgualA(delegua_2.default.RETICENCIAS)) {
                 parametro.abrangencia = 'multiplo';
             }
@@ -7337,7 +7377,12 @@ class AvaliadorSintatico extends avaliador_sintatico_base_1.AvaliadorSintaticoBa
             }
         }
         const tiposRetornos = new Set(expressoesRetorna.filter((e) => e.tipo !== 'qualquer').map((e) => e.tipo));
-        let retornaChamadoExplicitamente = tiposRetornos.size > 0;
+        // Não usar `tiposRetornos.size > 0` aqui: esse conjunto já descarta
+        // retornos de tipo 'qualquer' (ex.: `retorna x * y` com parâmetros sem
+        // tipo). Um `retorna` com valor de tipo indeterminado ainda conta como
+        // retorno explícito, senão a função seria incorretamente inferida como
+        // 'vazio' em vez de 'qualquer'.
+        let retornaChamadoExplicitamente = expressoesRetorna.some((e) => e.valor !== undefined);
         if (tiposRetornos.size > 1 && tipoRetorno !== 'qualquer') {
             let tiposEncontrados = Array.from(tiposRetornos).reduce((acumulador, valor) => (acumulador += valor + ', '), '');
             tiposEncontrados = tiposEncontrados.slice(0, -2);
@@ -12635,18 +12680,22 @@ class AvaliadorSintaticoTenda extends avaliador_sintatico_base_1.AvaliadorSintat
         this.avancarEDevolverAnterior();
         const chaves = [];
         const valores = [];
+        this.pularComentarios();
         if (this.verificarSeSimboloAtualEIgualA(tenda_1.default.CHAVE_DIREITA)) {
             return new construtos_1.Dicionario(this.hashArquivo, Number(simboloChaveEsquerda.linha), [], []);
         }
         while (!this.verificarSeSimboloAtualEIgualA(tenda_1.default.CHAVE_DIREITA)) {
             const chave = await this.obterChaveDicionario();
             this.consumir(tenda_1.default.DOIS_PONTOS, "Esperado ':' entre chave e valor.");
+            this.pularComentarios();
             const valor = await this.atribuir();
             chaves.push(chave);
             valores.push(valor);
+            this.pularComentarios();
             if (this.simbolos[this.atual].tipo !== tenda_1.default.CHAVE_DIREITA) {
                 this.consumir(tenda_1.default.VIRGULA, 'Esperado vírgula antes da próxima expressão.');
             }
+            this.pularComentarios();
         }
         return new construtos_1.Dicionario(this.hashArquivo, Number(simboloChaveEsquerda.linha), chaves, valores);
     }
@@ -25747,6 +25796,8 @@ const espaco_memoria_1 = require("../espaco-memoria");
 const quebras_1 = require("../../quebras");
 const objeto_delegua_classe_1 = require("./objeto-delegua-classe");
 const declaracoes_1 = require("../../declaracoes");
+const inferenciador_1 = require("../../inferenciador");
+const referencia_montao_1 = require("./referencia-montao");
 /**
  * Qualquer função declarada em código é uma DeleguaFuncao.
  */
@@ -25842,7 +25893,27 @@ class DeleguaFuncao extends chamavel_1.Chamavel {
                 else {
                     valorFinal = null;
                 }
-                ambiente.valores[nome] = valorFinal;
+                if (parametro.fixo) {
+                    // Vetores e dicionários vivem no montão; `valorFinal` é apenas
+                    // o ponteiro (`ReferenciaMontao`). É preciso congelar o valor
+                    // real armazenado no montão, não o ponteiro em si.
+                    if (valorFinal instanceof referencia_montao_1.ReferenciaMontao) {
+                        congelarProfundamente(visitante.resolverValor(valorFinal));
+                    }
+                    else {
+                        valorFinal = congelarProfundamente(valorFinal);
+                    }
+                }
+                if (parametro.imutavel || parametro.fixo) {
+                    ambiente.valores[nome] = {
+                        valor: valorFinal,
+                        tipo: (0, inferenciador_1.inferirTipoVariavel)(valorFinal),
+                        imutavel: true,
+                    };
+                }
+                else {
+                    ambiente.valores[nome] = valorFinal;
+                }
                 // Se o argumento é `DeleguaFuncao`, para habilitar o recurso de _currying_,
                 // copiamos seu valor para o escopo atual. Nem sempre podemos contar com a tipagem explícita aqui.
                 if (valorFinal &&
@@ -25923,6 +25994,30 @@ class DeleguaFuncao extends chamavel_1.Chamavel {
 }
 exports.DeleguaFuncao = DeleguaFuncao;
 /**
+ * Congela recursivamente vetores e objetos (dicionários), usados para
+ * implementar parâmetros `fixo`: qualquer tentativa de mutação do valor,
+ * mesmo através de um alias, deve resultar em erro em tempo de execução.
+ * Não congela instâncias de classe, funções ou outras estruturas de Delégua,
+ * pois isso quebraria comportamento esperado (ex.: métodos, `isto`).
+ */
+function congelarProfundamente(valor) {
+    if (valor === null || typeof valor !== 'object') {
+        return valor;
+    }
+    if (!Array.isArray(valor) && valor.constructor !== Object) {
+        return valor;
+    }
+    if (Object.isFrozen(valor)) {
+        return valor;
+    }
+    Object.freeze(valor);
+    const valores = Array.isArray(valor) ? valor : Object.values(valor);
+    for (const item of valores) {
+        congelarProfundamente(item);
+    }
+    return valor;
+}
+/**
  * Mapeia o tipo JS de um valor primitivo para o nome de tipo de Delégua.
  */
 function tipoDeDados(valor) {
@@ -25941,7 +26036,7 @@ function tipoDeDados(valor) {
     }
 }
 
-},{"../../declaracoes":164,"../../quebras":294,"../espaco-memoria":248,"./chamavel":249,"./objeto-delegua-classe":263}],254:[function(require,module,exports){
+},{"../../declaracoes":164,"../../inferenciador":183,"../../quebras":294,"../espaco-memoria":248,"./chamavel":249,"./objeto-delegua-classe":263,"./referencia-montao":265}],254:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DescritorTipoClasse = void 0;
@@ -27463,10 +27558,13 @@ class InterpretadorBase {
         return avaliacaoAgrupamento;
     }
     eVerdadeiro(objeto) {
-        if (objeto === null)
+        if (objeto === null || objeto === undefined)
             return false;
         if (typeof objeto === primitivos_1.default.BOOLEANO)
             return Boolean(objeto);
+        if (typeof objeto === primitivos_1.default.NUMERO || typeof objeto === 'bigint') {
+            return Boolean(objeto);
+        }
         if (objeto.hasOwnProperty('valor')) {
             return Boolean(objeto.valor);
         }
@@ -30620,6 +30718,9 @@ class Interpretador extends interpretador_base_1.InterpretadorBase {
         }
         objeto = this.resolverValor(objeto);
         indice = this.resolverValor(indice);
+        if (objeto && typeof objeto === 'object' && Object.isFrozen(objeto)) {
+            return Promise.reject(new excecoes_1.ErroEmTempoDeExecucao(expressao.objeto.simbolo, 'Não é possível mutar um valor fixo.', expressao.linha));
+        }
         // Se o valor é uma referência ao montão, e o índice que a recebe é
         // de uma variável/constante que vive num escopo superior, a referência
         // precisa ser transferida para o escopo correspondente.
@@ -32734,8 +32835,9 @@ class LexadorPortugolIpt {
     }
     adicionarSimbolo(tipo, literal) {
         const texto = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
-        const lexema = literal || texto;
-        const comprimentoLexema = typeof lexema === 'string' ? lexema.length : 0;
+        // `lexema` deve sempre ser texto. Ver comentário equivalente em `LexadorBase.adicionarSimbolo`.
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimentoLexema = lexema.length;
         const comprimento = Math.max(comprimentoLexema, texto.length) || 1;
         const colunaInicio = this.inicioSimbolo + 1;
         const colunaFim = this.inicioSimbolo + comprimento;
@@ -34187,8 +34289,9 @@ class LexadorBaseLinhaUnica {
     }
     adicionarSimbolo(tipo, literal) {
         const texto = this.codigo.substring(this.inicioSimbolo, this.atual);
-        const lexema = literal || texto;
-        const comprimentoLexema = typeof lexema === 'string' ? lexema.length : 0;
+        // `lexema` deve sempre ser texto. Ver comentário equivalente em `LexadorBase.adicionarSimbolo`.
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimentoLexema = lexema.length;
         const comprimento = Math.max(comprimentoLexema, texto.length) || 1;
         const colunaInicio = this.inicioSimbolo + 1;
         const colunaFim = this.inicioSimbolo + comprimento;
@@ -34326,8 +34429,15 @@ class LexadorBase {
     }
     adicionarSimbolo(tipo, literal, ehNumeroReal) {
         const texto = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
-        const lexema = literal || texto;
-        const comprimentoLexema = typeof lexema === 'string' ? lexema.length : 0;
+        // `lexema` deve sempre ser texto (o token como aparece no código-fonte).
+        // Para símbolos de um só avanço (operadores compostos, por exemplo), `literal`
+        // é passado como string e usado como `lexema` porque `texto` ainda está vazio
+        // nesse ponto. Mas `literal` também pode ser um valor já convertido (número,
+        // BigInt) para tokens como NUMERO — nesse caso `texto` é que deve virar o lexema,
+        // nunca o valor bruto (ver `verificarDefinicaoTipoAtual`, que chama `.toLowerCase()`
+        // em `lexema` esperando sempre uma string).
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimentoLexema = lexema.length;
         const comprimento = Math.max(comprimentoLexema, texto.length) || 1;
         const colunaInicio = this.inicioSimbolo + 1;
         const colunaFim = this.inicioSimbolo + comprimento;
@@ -34424,8 +34534,9 @@ class Lexador extends lexador_base_1.LexadorBase {
     }
     adicionarSimbolo(tipo, literal = null, ehNumeroReal) {
         const texto = this.codigo[this.linha].substring(this.inicioSimbolo, this.atual);
-        const lexema = literal !== null ? literal : texto;
-        const comprimento = Math.max(typeof lexema === 'string' ? lexema.length : 0, texto.length) || 1;
+        // `lexema` deve sempre ser texto. Ver comentário equivalente em `LexadorBase.adicionarSimbolo`.
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimento = Math.max(lexema.length, texto.length) || 1;
         this.simbolos.push(new simbolo_1.Simbolo(tipo, lexema, literal, this.linha + 1, this.hashArquivo, this.inicioSimbolo + 1, this.inicioSimbolo + comprimento, undefined, ehNumeroReal));
     }
     verificarEAvancar(esperado) {
@@ -34892,8 +35003,9 @@ class MicroLexadorPitugues {
     }
     adicionarSimbolo(tipo, literal = null) {
         const texto = this.codigo.substring(this.inicioSimbolo, this.atual);
-        const lexema = literal || texto;
-        const comprimentoLexema = typeof lexema === 'string' ? lexema.length : 0;
+        // `lexema` deve sempre ser texto. Ver comentário equivalente em `LexadorBase.adicionarSimbolo`.
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimentoLexema = lexema.length;
         const comprimento = Math.max(comprimentoLexema, texto.length) || 1;
         const colunaInicio = this.inicioSimbolo + 1;
         const colunaFim = this.inicioSimbolo + comprimento;
@@ -35108,8 +35220,9 @@ class MicroLexador {
     }
     adicionarSimbolo(tipo, literal = null) {
         const texto = this.codigo.substring(this.inicioSimbolo, this.atual);
-        const lexema = literal || texto;
-        const comprimentoLexema = typeof lexema === 'string' ? lexema.length : 0;
+        // `lexema` deve sempre ser texto. Ver comentário equivalente em `LexadorBase.adicionarSimbolo`.
+        const lexema = (typeof literal === 'string' && literal.length > 0) ? literal : texto;
+        const comprimentoLexema = lexema.length;
         const comprimento = Math.max(comprimentoLexema, texto.length) || 1;
         const colunaInicio = this.inicioSimbolo + 1;
         const colunaFim = this.inicioSimbolo + comprimento;
