@@ -1198,7 +1198,8 @@ exports.default = {
             const retorno = [];
             for (let elemento of vetor) {
                 const resultadoChamada = await funcao.chamar(interpretador, [elemento]);
-                if (resultadoChamada.hasOwnProperty('valorRetornado') &&
+                if (resultadoChamada &&
+                    resultadoChamada.hasOwnProperty('valorRetornado') &&
                     resultadoChamada.valorRetornado.valor === true) {
                     retorno.push(elemento);
                 }
@@ -1655,8 +1656,8 @@ class Agrupamento {
         this.expressao = expressao;
         this.tipo = expressao.tipo;
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoAgrupamento(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoAgrupamento(this);
     }
     paraTexto() {
         return `<agrupamento subExpressão=${this.expressao.paraTexto()} tipo=${this.tipo} />`;
@@ -1814,8 +1815,8 @@ class Atribuir {
             this.simboloOperador = simboloOperador;
         }
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoDeAtribuicao(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoDeAtribuicao(this);
     }
     paraTexto() {
         let indiceResolvido = 'índice=(não definido)';
@@ -1902,8 +1903,8 @@ class Binario {
         }
         return 'qualquer';
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoBinaria(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoBinaria(this);
     }
     paraTexto() {
         return (`<binário esquerda=${this.esquerda.paraTexto()} operador=${this.operador.lexema} ` +
@@ -2517,8 +2518,8 @@ class Literal {
         this.tipo = tipo;
         this.delimitadorTexto = delimitadorTexto;
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoLiteral(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoLiteral(this);
     }
     paraTexto() {
         let valor = this.valor;
@@ -2549,8 +2550,8 @@ class Logico {
         this.operador = operador;
         this.direita = direita;
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoLogica(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoLogica(this);
     }
     paraTexto() {
         return (`<lógico esquerda=${this.esquerda.paraTexto()} operador=${this.operador.lexema} ` +
@@ -2616,7 +2617,7 @@ exports.ParaCadaComoConstruto = ParaCadaComoConstruto;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParaComoConstruto = void 0;
 class ParaComoConstruto {
-    constructor(hashArquivo, linha, inicializador, condicao, incrementar, corpo) {
+    constructor(hashArquivo, linha, inicializador, condicao, incrementar, corpo, comParenteses = true) {
         this.linha = linha;
         this.hashArquivo = hashArquivo;
         this.inicializador = inicializador;
@@ -2626,6 +2627,7 @@ class ParaComoConstruto {
         this.inicializada = false;
         this.blocoPosExecucao = undefined;
         this.resolverIncrementoEmExecucao = false;
+        this.comParenteses = comParenteses;
     }
     async aceitar(visitante) {
         return await visitante.visitarExpressaoPara(this);
@@ -3209,8 +3211,8 @@ class Unario {
         this.incidenciaOperador = incidenciaOperador;
         this.tipo = operando.tipo;
     }
-    async aceitar(visitante) {
-        return await visitante.visitarExpressaoUnaria(this);
+    aceitar(visitante) {
+        return visitante.visitarExpressaoUnaria(this);
     }
     paraTexto() {
         return `<unário operando=${this.operando.paraTexto()} operador=${this.operador.lexema} incidênciaOperador=${this.incidenciaOperador} />`;
@@ -3232,8 +3234,8 @@ class Variavel {
         this.simbolo = simbolo;
         this.tipo = tipo;
     }
-    async aceitar(visitante) {
-        return Promise.resolve(visitante.visitarExpressaoDeVariavel(this));
+    aceitar(visitante) {
+        return visitante.visitarExpressaoDeVariavel(this);
     }
     paraTexto() {
         return `<variável nome=${this.simbolo.lexema} tipo=${this.tipo} />`;
